@@ -1,0 +1,14 @@
+/home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/deps/libserde-e88df2dd7141703a.rmeta: /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/build/serde-0d5f8eac1eafbb77/out/private.rs
+
+/home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/deps/libserde-e88df2dd7141703a.rlib: /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/build/serde-0d5f8eac1eafbb77/out/private.rs
+
+/home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/deps/serde-e88df2dd7141703a.d: /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs /home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs /home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/build/serde-0d5f8eac1eafbb77/out/private.rs
+
+/home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/lib.rs:
+/home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/integer128.rs:
+/home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/mod.rs:
+/home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/de.rs:
+/home/kartik/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.228/src/private/ser.rs:
+/home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/build/serde-0d5f8eac1eafbb77/out/private.rs:
+
+# env-dep:OUT_DIR=/home/kartik/Downloads/Projets/VeilPool/target/sbpf-solana-solana/release/build/serde-0d5f8eac1eafbb77/out

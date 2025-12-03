@@ -6,16 +6,16 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-node_registry = "NodE1111111111111111111111111111111111111111"
-privacy_pool = "PooL1111111111111111111111111111111111111111"
-privacy_pass = "Pass1111111111111111111111111111111111111111"
-vrf_selection = "VRF11111111111111111111111111111111111111111"
+node_registry = "4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo"
+privacy_pool = "H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e"
+privacy_pass = "786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH"
+vrf_selection = "4SD36sZLcudbMwUqpd9Efp2iBrN5ihMWj8d59aFAoQFT"
 
 [programs.localnet]
-node_registry = "NodE1111111111111111111111111111111111111111"
-privacy_pool = "PooL1111111111111111111111111111111111111111"
-privacy_pass = "Pass1111111111111111111111111111111111111111"
-vrf_selection = "VRF11111111111111111111111111111111111111111"
+node_registry = "4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo"
+privacy_pool = "H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e"
+privacy_pass = "786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH"
+vrf_selection = "4SD36sZLcudbMwUqpd9Efp2iBrN5ihMWj8d59aFAoQFT"
 
 [registry]
 url = "https://api.apr.dev"

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-declare_id!("NodE1111111111111111111111111111111111111111");
+declare_id!("4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo");
 
 const MIN_STAKE: u64 = 100_000_000_000;
 const UNBONDING_PERIOD: i64 = 604800;
