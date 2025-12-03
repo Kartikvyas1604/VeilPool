@@ -1,0 +1,19 @@
+[package]
+name = "vrf-selection"
+version = "0.1.0"
+description = "VeilPool VRF Node Selection - Cryptographically random node assignment"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "vrf_selection"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.31.1"

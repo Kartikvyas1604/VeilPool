@@ -2,7 +2,8 @@
 members = [
     "programs/node-registry",
     "programs/privacy-pool",
-    "programs/privacy-pass"
+    "programs/privacy-pass",
+    "programs/vrf-selection"
 ]
 resolver = "2"
 
