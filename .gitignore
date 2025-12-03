@@ -1,2 +1,6 @@
 //Secret File
 Working.txt
+
+node_modules
+dist
+.env
