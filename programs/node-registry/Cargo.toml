@@ -1,0 +1,20 @@
+[package]
+name = "node-registry"
+version = "0.1.0"
+description = "VeilPool Node Registry - Manage VPN node operators, staking, and reputation"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "node_registry"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.31.1"
+anchor-spl = "0.31.1"
