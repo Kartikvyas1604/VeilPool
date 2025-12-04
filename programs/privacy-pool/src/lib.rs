@@ -328,7 +328,7 @@ pub struct AddBeneficiaries<'info> {
         init,
         payer = sponsor,
         space = 8 + BeneficiaryAccess::LEN,
-        seeds = [b"access", pool_id.to_le_bytes().as_ref(), beneficiary_key.as_ref()],
+        seeds = [b"access", pool_id.to_le_bytes().as_ref(), beneficiary_key.key().as_ref()],
         bump
     )]
     pub beneficiary_access: Account<'info, BeneficiaryAccess>,

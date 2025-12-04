@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: veilpool-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  routing-engine:
+    build:
+      context: ./routing-engine
+      dockerfile: Dockerfile
+    container_name: veilpool-routing
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - PORT=3001
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: veilpool-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_ROUTING_ENGINE_URL=http://routing-engine:3001
+      - NEXT_PUBLIC_SOLANA_RPC=${SOLANA_RPC_URL}
+    depends_on:
+      - routing-engine
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  default:
+    name: veilpool-network

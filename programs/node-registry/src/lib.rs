@@ -127,16 +127,17 @@ pub mod node_registry {
     }
 
     pub fn withdraw_unstaked(ctx: Context<WithdrawUnstaked>) -> Result<()> {
-        let node = &ctx.accounts.node_account;
         let clock = Clock::get()?;
+        let node_key = ctx.accounts.node_account.key();
+        let node_operator = ctx.accounts.node_account.operator;
         
+        let node = &ctx.accounts.node_account;
         require!(node.unbonding_until > 0, ErrorCode::NoUnbondingInProgress);
         require!(clock.unix_timestamp >= node.unbonding_until, ErrorCode::UnbondingPeriodActive);
 
         let amount = node.stake_amount;
+        
         let registry = &mut ctx.accounts.global_registry;
-
-        let node_key = ctx.accounts.node_account.key();
         let bump = ctx.bumps.stake_vault;
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"stake",
@@ -160,7 +161,7 @@ pub mod node_registry {
         registry.total_stake = registry.total_stake.checked_sub(amount).unwrap();
 
         emit!(StakeWithdrawn {
-            operator: node.operator,
+            operator: node_operator,
             amount,
             timestamp: clock.unix_timestamp,
         });
@@ -207,6 +208,9 @@ pub mod node_registry {
     }
 
     pub fn slash_node(ctx: Context<SlashNode>, violation_type: ViolationType) -> Result<()> {
+        let node_key = ctx.accounts.node_account.key();
+        let node_operator = ctx.accounts.node_account.operator;
+        
         let node = &mut ctx.accounts.node_account;
         let registry = &mut ctx.accounts.global_registry;
         
@@ -221,7 +225,6 @@ pub mod node_registry {
             .checked_mul(slash_bps as u64).unwrap()
             .checked_div(10000).unwrap();
 
-        let node_key = ctx.accounts.node_account.key();
         let bump = ctx.bumps.stake_vault;
         let signer_seeds: &[&[&[u8]]] = &[&[
             b"stake",
@@ -248,7 +251,7 @@ pub mod node_registry {
         }
 
         emit!(NodeSlashed {
-            operator: node.operator,
+            operator: node_operator,
             violation_type,
             slash_amount,
             remaining_stake: node.stake_amount,

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, MintTo, Burn, Transfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 declare_id!("786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH");
 
@@ -412,6 +412,7 @@ pub struct PurchasePass<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(pool_id: u64)]
 pub struct CreatePoolPass<'info> {
     #[account(
         init,

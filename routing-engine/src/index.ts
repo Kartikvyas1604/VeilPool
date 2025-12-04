@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
@@ -7,6 +7,9 @@ import { PythIntegration } from './pyth-integration';
 import { RoutingEngine } from './routing-engine';
 import { RedisCache } from './redis-cache';
 import { UserRoutingRequest } from './types';
+import { logger } from './logger';
+import { errorHandler, notFoundHandler, asyncHandler, ValidationError } from './error-handler';
+import { randomUUID } from 'crypto';
 
 dotenv.config();
 
@@ -15,6 +18,22 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  (req as any).correlationId = randomUUID();
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.path}`, {
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+      correlationId: (req as any).correlationId,
+    });
+  });
+  
+  next();
+});
 
 const RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
 const PYTH_ENDPOINT = process.env.PYTH_ENDPOINT || 'https://pyth.network';
@@ -29,7 +48,7 @@ const redisCache = new RedisCache();
 const clients = new Set<WebSocket>();
 
 wss.on('connection', (ws: WebSocket) => {
-  console.log('WebSocket client connected');
+  logger.info('WebSocket client connected');
   clients.add(ws);
 
   ws.on('message', async (message: string) => {
@@ -43,13 +62,13 @@ wss.on('connection', (ws: WebSocket) => {
         }));
       }
     } catch (error) {
-      console.error('WebSocket message error:', error);
+      logger.error('WebSocket message error', { error });
     }
   });
 
   ws.on('close', () => {
     clients.delete(ws);
-    console.log('WebSocket client disconnected');
+    logger.info('WebSocket client disconnected');
   });
 });
 
@@ -71,154 +90,124 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/routing/optimal-node', async (req: Request, res: Response) => {
-  try {
-    const { user_location, destination, priority = 'balanced' } = req.query;
+app.get('/api/routing/optimal-node', asyncHandler(async (req: Request, res: Response) => {
+  const { user_location, destination, priority = 'balanced' } = req.query;
 
-    if (!user_location || !destination) {
-      return res.status(400).json({
-        error: 'Missing required parameters: user_location, destination',
-      });
-    }
-
-    const request: UserRoutingRequest = {
-      userLocation: user_location as string,
-      destination: destination as string,
-      requiredBandwidth: 10,
-      priorityMode: priority as 'speed' | 'privacy' | 'balanced',
-    };
-
-    const cachedDecision = await redisCache.getCachedRouting(
-      `${user_location}-${destination}`
-    );
-
-    if (cachedDecision) {
-      return res.json({
-        ...cachedDecision,
-        cached: true,
-      });
-    }
-
-    const decision = await routingEngine.selectOptimalNode(request);
-    
-    await redisCache.cacheRoutingDecision(
-      `${user_location}-${destination}`,
-      decision
-    );
-
-    res.json(decision);
-  } catch (error: any) {
-    console.error('Routing error:', error);
-    res.status(500).json({ error: error.message });
+  if (!user_location || !destination) {
+    throw new ValidationError('Missing required parameters: user_location, destination');
   }
-});
 
-app.post('/api/routing/report-failure', async (req: Request, res: Response) => {
-  try {
-    const { node_id, failure_reason } = req.body;
+  const request: UserRoutingRequest = {
+    userLocation: user_location as string,
+    destination: destination as string,
+    requiredBandwidth: 10,
+    priorityMode: priority as 'speed' | 'privacy' | 'balanced',
+  };
 
-    if (!node_id || !failure_reason) {
-      return res.status(400).json({
-        error: 'Missing required fields: node_id, failure_reason',
-      });
-    }
+  const cacheKey = `${user_location}-${destination}`;
+  const cachedDecision = await redisCache.getCachedRouting(cacheKey);
 
-    console.log(`Node failure reported: ${node_id} - ${failure_reason}`);
-
-    await redisCache.incrementCounter(`failures:${node_id}`);
-
-    broadcastUpdate({
-      type: 'node_failure',
-      nodeId: node_id,
-      reason: failure_reason,
-      timestamp: Date.now(),
+  if (cachedDecision) {
+    logger.debug('Returning cached routing decision', { cacheKey });
+    return res.json({
+      ...cachedDecision,
+      cached: true,
     });
-
-    res.json({ success: true });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
   }
-});
 
-app.get('/api/nodes/health-status', (req: Request, res: Response) => {
-  try {
-    const nodes = nodeMonitor.getActiveNodes();
-    const stats = routingEngine.getRoutingStats();
+  const decision = await routingEngine.selectOptimalNode(request);
+  await redisCache.cacheRoutingDecision(cacheKey, decision);
 
-    res.json({
-      nodes,
-      stats,
-      timestamp: Date.now(),
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  res.json(decision);
+}));
+
+app.post('/api/routing/report-failure', asyncHandler(async (req: Request, res: Response) => {
+  const { node_id, failure_reason } = req.body;
+
+  if (!node_id || !failure_reason) {
+    throw new ValidationError('Missing required fields: node_id, failure_reason');
   }
-});
 
-app.get('/api/nodes/:nodeId', (req: Request, res: Response) => {
-  try {
-    const { nodeId } = req.params;
-    const node = nodeMonitor.getNodeById(nodeId);
+  logger.warn('Node failure reported', { nodeId: node_id, reason: failure_reason });
 
-    if (!node) {
-      return res.status(404).json({ error: 'Node not found' });
-    }
+  await redisCache.incrementCounter(`failures:${node_id}`);
 
-    res.json(node);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  broadcastUpdate({
+    type: 'node_failure',
+    nodeId: node_id,
+    reason: failure_reason,
+    timestamp: Date.now(),
+  });
+
+  res.json({ success: true });
+}));
+
+app.get('/api/nodes/health-status', asyncHandler(async (req: Request, res: Response) => {
+  const nodes = nodeMonitor.getActiveNodes();
+  const stats = routingEngine.getRoutingStats();
+
+  res.json({
+    nodes,
+    stats,
+    timestamp: Date.now(),
+  });
+}));
+
+app.get('/api/nodes/:nodeId', asyncHandler(async (req: Request, res: Response) => {
+  const { nodeId } = req.params;
+  const node = nodeMonitor.getNodeById(nodeId);
+
+  if (!node) {
+    return res.status(404).json({ error: 'Node not found' });
   }
-});
 
-app.get('/api/threat-intel/:countryCode', (req: Request, res: Response) => {
-  try {
-    const { countryCode } = req.params;
-    const intel = pythIntegration.getThreatLevel(countryCode);
+  res.json(node);
+}));
 
-    res.json(intel);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.get('/api/threat-intel/:countryCode', asyncHandler(async (req: Request, res: Response) => {
+  const { countryCode } = req.params;
+  const intel = pythIntegration.getThreatLevel(countryCode);
 
-app.get('/api/threat-intel', (req: Request, res: Response) => {
-  try {
-    const allThreatData = pythIntegration.getAllThreatData();
-    const threatArray = Array.from(allThreatData.entries()).map(([country, intel]) => ({
-      country,
-      ...intel,
-    }));
+  res.json(intel);
+}));
 
-    res.json(threatArray);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.get('/api/threat-intel', asyncHandler(async (req: Request, res: Response) => {
+  const allThreatData = pythIntegration.getAllThreatData();
+  const threatArray = Array.from(allThreatData.entries()).map(([country, intel]) => ({
+    country,
+    ...intel,
+  }));
 
-app.get('/api/stats', async (req: Request, res: Response) => {
-  try {
-    const routingStats = routingEngine.getRoutingStats();
-    const redisStats = await redisCache.getStats();
+  res.json(threatArray);
+}));
 
-    res.json({
-      routing: routingStats,
-      redis: redisStats,
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.get('/api/stats', asyncHandler(async (req: Request, res: Response) => {
+  const routingStats = routingEngine.getRoutingStats();
+  const redisStats = await redisCache.getStats();
+
+  res.json({
+    routing: routingStats,
+    redis: redisStats,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+  });
+}));
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 async function startServer() {
   try {
-    console.log('Starting VeilPool Routing Engine...');
+    logger.info('Starting VeilPool Routing Engine...');
 
     await redisCache.connect(REDIS_URL);
+    logger.info('Redis connected successfully');
     
     await nodeMonitor.startMonitoring();
+    logger.info('Node monitoring started');
+    
     await pythIntegration.startMonitoring();
+    logger.info('Pyth integration monitoring started');
 
     setInterval(() => {
       const stats = routingEngine.getRoutingStats();
@@ -230,26 +219,37 @@ async function startServer() {
     }, 30000);
 
     server.listen(PORT, () => {
-      console.log(`Routing Engine API listening on port ${PORT}`);
-      console.log(`WebSocket server ready for connections`);
+      logger.info(`Routing Engine API listening on port ${PORT}`);
+      logger.info('WebSocket server ready for connections');
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server', { error });
     process.exit(1);
   }
 }
 
 process.on('SIGINT', async () => {
-  console.log('Shutting down gracefully...');
+  logger.info('Shutting down gracefully...');
   
   nodeMonitor.stopMonitoring();
   pythIntegration.stopMonitoring();
   await redisCache.disconnect();
   
   server.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
+});
+
+process.on('uncaughtException', (error: Error) => {
+  logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  logger.error('Unhandled Rejection', { reason });
+  process.exit(1);
 });
 
 startServer();

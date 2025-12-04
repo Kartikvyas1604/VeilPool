@@ -6,6 +6,13 @@
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "exclude": [
+    "node_modules",
+    "app",
+    "packages",
+    "routing-engine"
+  ]
 }
