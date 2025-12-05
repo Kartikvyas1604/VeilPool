@@ -31,14 +31,22 @@ export class NodeMonitor {
 
   async fetchAllNodes(): Promise<NodeHealthMetrics[]> {
     try {
-      const programAccounts = await this.connection.getProgramAccounts(
-        NODE_REGISTRY_PROGRAM_ID,
-        {
-          filters: [
-            { dataSize: 8 + 200 },
-          ],
-        }
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Fetch nodes timeout')), 10000)
       );
+
+      const programAccounts = await Promise.race([
+        this.connection.getProgramAccounts(
+          NODE_REGISTRY_PROGRAM_ID,
+          {
+            filters: [
+              { dataSize: 8 + 200 },
+            ],
+          }
+        ),
+        timeoutPromise
+      ]);
 
       const nodes: NodeHealthMetrics[] = [];
 
