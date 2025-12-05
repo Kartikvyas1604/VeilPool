@@ -1,7 +1,7 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { NodeHealthMetrics } from './types';
 
-const NODE_REGISTRY_PROGRAM_ID = new PublicKey('NodE1111111111111111111111111111111111111111');
+const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
 
 export class NodeMonitor {
   private connection: Connection;

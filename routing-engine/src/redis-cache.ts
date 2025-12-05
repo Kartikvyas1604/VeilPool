@@ -6,11 +6,19 @@ export class RedisCache {
 
   async connect(url: string): Promise<void> {
     try {
-      this.client = createClient({ url });
+      this.client = createClient({ 
+        url,
+        socket: {
+          reconnectStrategy: false // Don't auto-reconnect if initial connection fails
+        }
+      });
       
       this.client.on('error', (err: Error) => {
-        console.error('Redis Client Error:', err);
-        this.isConnected = false;
+        // Only log once, don't spam
+        if (this.isConnected) {
+          console.error('Redis Client Error:', err.message);
+          this.isConnected = false;
+        }
       });
 
       this.client.on('connect', () => {
@@ -20,8 +28,9 @@ export class RedisCache {
 
       await this.client.connect();
     } catch (error) {
-      console.error('Failed to connect to Redis:', error);
+      console.warn('Redis not available, using in-memory cache');
       this.isConnected = false;
+      this.client = null;
     }
   }
 

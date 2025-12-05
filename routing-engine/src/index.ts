@@ -239,8 +239,13 @@ async function startServer() {
   try {
     logger.info('Starting VeilPool Routing Engine...');
 
-    await redisCache.connect(REDIS_URL);
-    logger.info('Redis connected successfully');
+    // Redis is optional - continue without it if connection fails
+    try {
+      await redisCache.connect(REDIS_URL);
+      logger.info('Redis connected successfully');
+    } catch (error) {
+      logger.warn('Redis connection failed, using in-memory cache', { error });
+    }
     
     await nodeMonitor.startMonitoring();
     logger.info('Node monitoring started');
