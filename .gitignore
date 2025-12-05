@@ -4,3 +4,16 @@ Working.txt
 node_modules
 dist
 .env
+
+# Rust/Cargo
+target/
+**/*.rs.bk
+Cargo.lock
+
+# IDL files (regenerated from source)
+*.json
+
+# Anchor build artifacts
+.anchor
+test-ledger/
+.DS_Store

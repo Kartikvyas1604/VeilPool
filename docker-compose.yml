@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  routing-engine:
+    build:
+      context: ./routing-engine
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - PYTH_PRICE_FEED_ID=${PYTH_PRICE_FEED_ID}
+      - LOG_LEVEL=info
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - veilpool
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - veilpool
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - NEXT_PUBLIC_ROUTING_ENGINE_URL=http://routing-engine:3001
+    depends_on:
+      - routing-engine
+    restart: unless-stopped
+    networks:
+      - veilpool
+
+volumes:
+  redis-data:
+
+networks:
+  veilpool:
+    driver: bridge

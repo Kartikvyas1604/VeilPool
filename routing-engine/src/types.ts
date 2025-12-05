@@ -10,6 +10,10 @@ export interface NodeHealthMetrics {
   lastHeartbeat: number;
   isActive: boolean;
   threatLevel: number;
+  connectionSuccessRate?: number;
+  packetLossRate?: number;
+  avgResponseTime?: number;
+  lastHealthCheck?: number;
 }
 
 export interface ThreatIntelligence {

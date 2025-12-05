@@ -72,10 +72,14 @@ export class NodeMonitor {
     const operatorOffset = 8;
     const operator = new PublicKey(data.slice(operatorOffset, operatorOffset + 32)).toString();
 
+    const locationBytes = data.slice(60, 124);
+    const locationStr = locationBytes.toString('utf8').replace(/\0/g, '').trim();
+    const location = locationStr || 'UNKNOWN';
+
     return {
       nodeId: pubkey,
       operator,
-      location: 'US-WEST',
+      location,
       latencyMs: Math.floor(Math.random() * 150) + 20,
       uptimePercentage,
       reputation,
@@ -84,6 +88,8 @@ export class NodeMonitor {
       lastHeartbeat,
       isActive,
       threatLevel: 0,
+      connectionSuccessRate: 0.95,
+      packetLossRate: 0.01,
     };
   }
 

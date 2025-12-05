@@ -2,13 +2,16 @@ import express, { Request, Response, NextFunction } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import { NodeMonitor } from './node-monitor';
 import { PythIntegration } from './pyth-integration';
 import { RoutingEngine } from './routing-engine';
 import { RedisCache } from './redis-cache';
+import { ConnectionManager } from './connection-manager';
 import { UserRoutingRequest } from './types';
 import { logger } from './logger';
 import { errorHandler, notFoundHandler, asyncHandler, ValidationError } from './error-handler';
+import { RateLimiter } from './rate-limiter';
 import { randomUUID } from 'crypto';
 
 dotenv.config();
@@ -17,7 +20,26 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
+const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+app.use(cors({
+  origin: corsOrigins,
+  credentials: true,
+}));
+
 app.use(express.json());
+
+const rateLimiter = new RateLimiter();
+app.use('/api/', rateLimiter.middleware());
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  (req as any).correlationId = randomUUID();
+  logger.info('Incoming request', {
+    method: req.method,
+    path: req.path,
+    correlationId: (req as any).correlationId,
+  });
+  next();
+});
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   (req as any).correlationId = randomUUID();
@@ -44,8 +66,25 @@ const nodeMonitor = new NodeMonitor(RPC_URL);
 const pythIntegration = new PythIntegration(PYTH_ENDPOINT);
 const routingEngine = new RoutingEngine(nodeMonitor, pythIntegration);
 const redisCache = new RedisCache();
+const connectionManager = new ConnectionManager();
 
 const clients = new Set<WebSocket>();
+
+connectionManager.on('connectionEstablished', (data) => {
+  broadcastUpdate({ type: 'connection_established', data });
+});
+
+connectionManager.on('connectionTerminated', (data) => {
+  broadcastUpdate({ type: 'connection_terminated', data });
+});
+
+connectionManager.on('nodeSwitched', (data) => {
+  broadcastUpdate({ type: 'node_switched', data });
+});
+
+connectionManager.on('connectionFailed', (data) => {
+  broadcastUpdate({ type: 'connection_failed', data });
+});
 
 wss.on('connection', (ws: WebSocket) => {
   logger.info('WebSocket client connected');
