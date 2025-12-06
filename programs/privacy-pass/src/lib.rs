@@ -291,6 +291,9 @@ pub mod privacy_pass {
         let pass = &ctx.accounts.pass_account;
         let clock = Clock::get()?;
         
+        // Verify the signer is the pass owner
+        require_keys_eq!(ctx.accounts.user.key(), pass.user, ErrorCode::Unauthorized);
+        
         let is_valid = pass.is_active
             && clock.unix_timestamp <= pass.expiry_timestamp
             && pass.remaining_gb >= required_gb;
@@ -505,6 +508,8 @@ pub struct ValidatePass<'info> {
         bump
     )]
     pub pass_account: Account<'info, PassAccount>,
+    
+    pub user: Signer<'info>,
 }
 
 #[derive(Accounts)]

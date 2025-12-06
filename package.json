@@ -18,7 +18,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/chai": "^5.2.3",
+    "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
@@ -26,8 +28,10 @@
     "chai": "^6.2.1",
     "concurrently": "^8.2.2",
     "eslint": "^8.55.0",
+    "jest": "^30.2.0",
     "mocha": "^11.7.5",
     "prettier": "^3.1.0",
+    "ts-jest": "^29.4.6",
     "ts-mocha": "^11.1.0",
     "typescript": "^5.3.3"
   }

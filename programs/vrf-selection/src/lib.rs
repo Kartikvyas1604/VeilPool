@@ -69,8 +69,8 @@ pub mod vrf_node_selection {
         Ok(())
     }
 
-    pub fn get_selected_node(ctx: Context<GetSelectedNode>) -> Result<Option<Pubkey>> {
-        let request = &ctx.accounts.vrf_request;
+    pub fn get_selected_node(_ctx: Context<GetSelectedNode>) -> Result<Option<Pubkey>> {
+        let request = &_ctx.accounts.vrf_request;
         Ok(request.selected_node)
     }
 }
@@ -134,9 +134,12 @@ pub struct GetSelectedNode<'info> {
         bump
     )]
     pub vrf_request: Account<'info, VrfRequest>,
+    
+    pub user: Signer<'info>,
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct VrfRequest {
     pub user: Pubkey,
     pub seed: [u8; 32],
@@ -146,6 +149,7 @@ pub struct VrfRequest {
 }
 
 impl VrfRequest {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 32 + 8 + 1 + (1 + 32);
 }
 
