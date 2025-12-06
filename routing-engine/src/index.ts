@@ -58,12 +58,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 const RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
-const PYTH_ENDPOINT = process.env.PYTH_ENDPOINT || 'https://pyth.network';
+const PYTH_ENDPOINT = process.env.PYTH_ENDPOINT || 'https://hermes.pyth.network';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const PORT = process.env.PORT || 3001;
 
 const nodeMonitor = new NodeMonitor(RPC_URL);
-const pythIntegration = new PythIntegration(PYTH_ENDPOINT);
+const pythIntegration = new PythIntegration(RPC_URL, PYTH_ENDPOINT);
 const routingEngine = new RoutingEngine(nodeMonitor, pythIntegration);
 const redisCache = new RedisCache();
 const connectionManager = new ConnectionManager();
@@ -206,29 +206,58 @@ app.get('/api/nodes/:nodeId', asyncHandler(async (req: Request, res: Response) =
 app.get('/api/threat-intel/:countryCode', asyncHandler(async (req: Request, res: Response) => {
   const { countryCode } = req.params;
   const intel = pythIntegration.getThreatLevel(countryCode);
+  const historical = pythIntegration.getHistoricalThreatData(countryCode, 7);
 
-  res.json(intel);
+  res.json({ ...intel, historical });
 }));
 
 app.get('/api/threat-intel', asyncHandler(async (req: Request, res: Response) => {
-  const allThreatData = pythIntegration.getAllThreatData();
-  const threatArray = Array.from(allThreatData.entries()).map(([country, intel]) => ({
-    country,
-    ...intel,
-  }));
+  const allThreatData = pythIntegration.getAllThreatIntelligence();
+  res.json(allThreatData);
+}));
 
-  res.json(threatArray);
+app.get('/api/prices', asyncHandler(async (req: Request, res: Response) => {
+  const solPrice = pythIntegration.getPrice('SOL_USD');
+  const usdcPrice = pythIntegration.getPrice('USDC_USD');
+
+  res.json({
+    SOL_USD: solPrice,
+    USDC_USD: usdcPrice,
+    timestamp: Date.now(),
+  });
+}));
+
+app.get('/api/prices/:symbol', asyncHandler(async (req: Request, res: Response) => {
+  const { symbol } = req.params;
+  const validSymbols = ['SOL_USD', 'USDC_USD'];
+  
+  if (!validSymbols.includes(symbol)) {
+    throw new ValidationError(`Invalid symbol. Must be one of: ${validSymbols.join(', ')}`);
+  }
+
+  const price = pythIntegration.getPrice(symbol as 'SOL_USD' | 'USDC_USD');
+  
+  if (!price) {
+    return res.status(404).json({ error: 'Price data not available' });
+  }
+
+  res.json(price);
 }));
 
 app.get('/api/stats', asyncHandler(async (req: Request, res: Response) => {
   const routingStats = routingEngine.getRoutingStats();
+  const networkStats = pythIntegration.getNetworkStats();
   const redisStats = await redisCache.getStats();
+  const connectionStats = connectionManager.getStats();
 
   res.json({
     routing: routingStats,
+    network: networkStats,
+    connections: connectionStats,
     redis: redisStats,
     uptime: process.uptime(),
     memory: process.memoryUsage(),
+    timestamp: Date.now(),
   });
 }));
 
