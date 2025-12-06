@@ -1,0 +1,48 @@
+{
+  "name": "veilpool-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive test suite for VeilPool",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:programs": "jest tests/programs.test.ts",
+    "test:routing": "jest tests/routing-engine.test.ts",
+    "test:sdk": "jest tests/sdk.test.ts",
+    "test:integration": "jest --testPathPattern=integration"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.6",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.95.8",
+    "axios": "^1.6.5"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/tests"],
+    "testMatch": ["**/*.test.ts"],
+    "collectCoverageFrom": [
+      "packages/**/*.ts",
+      "routing-engine/**/*.ts",
+      "!**/*.d.ts",
+      "!**/node_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
+}

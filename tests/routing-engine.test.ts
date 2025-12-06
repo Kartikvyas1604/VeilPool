@@ -1,23 +1,13 @@
-import { expect } from 'chai';
-import request from 'supertest';
-import { RoutingEngine } from '../routing-engine/src/routing-engine';
-import { NodeMonitor } from '../routing-engine/src/node-monitor';
-import { PythIntegration } from '../routing-engine/src/pyth-integration';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import axios from 'axios';
 
-describe('Routing Engine Integration Tests', () => {
-  let routingEngine: RoutingEngine;
-  let nodeMonitor: NodeMonitor;
-  let pythIntegration: PythIntegration;
+const ROUTING_ENGINE_URL = 'http://localhost:3001';
 
-  const mockRpcUrl = 'https://api.devnet.solana.com';
-  const mockPythEndpoint = 'https://pyth.network';
-
-  before(async () => {
-    nodeMonitor = new NodeMonitor(mockRpcUrl);
-    pythIntegration = new PythIntegration(mockPythEndpoint);
-    routingEngine = new RoutingEngine(nodeMonitor, pythIntegration);
-
-    // Add mock nodes for testing
+describe('Routing Engine API', () => {
+  beforeAll(async () => {
+    // Wait for routing engine to be ready
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
     await nodeMonitor.startMonitoring();
   });
 
