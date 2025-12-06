@@ -600,6 +600,7 @@ pub struct ReactivateNode<'info> {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct GlobalRegistry {
     pub authority: Pubkey,
     pub total_nodes: u32,
@@ -610,15 +611,19 @@ pub struct GlobalRegistry {
 }
 
 impl GlobalRegistry {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 4 + 8 + 32 + 8 + 8;
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct NodeAccount {
     pub operator: Pubkey,
     pub stake_amount: u64,
     pub reputation: u8,
+    #[max_len(64)]
     pub location: String,
+    #[max_len(45)]
     pub ip_address: String,
     pub bandwidth_gbps: u16,
     pub total_bandwidth_served: u64,
@@ -632,6 +637,7 @@ pub struct NodeAccount {
 }
 
 impl NodeAccount {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 8 + 1 + (4 + 64) + (4 + 45) + 2 + 8 + 1 + 8 + 8 + 1 + 8 + 8 + 2;
 }
 

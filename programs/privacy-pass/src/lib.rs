@@ -534,6 +534,7 @@ pub struct UpdatePricing<'info> {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct PricingConfig {
     pub authority: Pubkey,
     pub base_price_per_gb: u64,
@@ -550,10 +551,12 @@ pub struct PricingConfig {
 }
 
 impl PricingConfig {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 2 + 8 + 2 + 1;
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct PassAccount {
     pub user: Pubkey,
     pub remaining_gb: u64,
@@ -566,6 +569,7 @@ pub struct PassAccount {
 }
 
 impl PassAccount {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 8 + 8 + (1 + 8) + 8 + 8 + 1 + 1;
 }
 

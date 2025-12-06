@@ -464,9 +464,11 @@ pub struct ExtendAllocation<'info> {
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct PoolAccount {
     pub sponsor: Pubkey,
     pub pool_id: u64,
+    #[max_len(32)]
     pub name: String,
     pub token_mint: Pubkey,
     pub total_funded: u64,
@@ -480,10 +482,12 @@ pub struct PoolAccount {
 }
 
 impl PoolAccount {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 32 + 8 + (4 + MAX_POOL_NAME_LEN) + 32 + 8 + 8 + 4 + 8 + 1 + 8 + 8 + 1;
 }
 
 #[account]
+#[derive(InitSpace)]
 pub struct BeneficiaryAccess {
     pub pool_id: u64,
     pub beneficiary: Pubkey,
@@ -495,6 +499,7 @@ pub struct BeneficiaryAccess {
 }
 
 impl BeneficiaryAccess {
+    #[allow(clippy::arithmetic_side_effects)]
     pub const LEN: usize = 8 + 32 + 8 + 8 + 8 + 1 + 8;
 }
 

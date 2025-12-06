@@ -93,6 +93,7 @@ fn select_weighted_node(
         }
     }
 
+    #[allow(clippy::arithmetic_side_effects)]
     Ok(nodes[nodes.len() - 1])
 }
 

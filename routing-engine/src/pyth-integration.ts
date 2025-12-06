@@ -300,8 +300,8 @@ export class PythIntegration {
     
     return trainingData;
   }
-}
 
+  getCountriesBelowThreatLevel(threshold: number): string[] {
     return Array.from(this.threatCache.entries())
       .filter(([_, intel]) => intel.threatLevel < threshold)
       .map(([country, _]) => country);
