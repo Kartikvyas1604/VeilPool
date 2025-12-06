@@ -226,16 +226,30 @@ export class VeilPool extends EventEmitter {
         `${routingEngineUrl}/api/routing/optimal-node?user_location=${userLocation || 'US'}&destination=global&priority=balanced`
       );
       
-      const decision = await response.json();
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`);
+      }
       
-      return {
-        id: decision.primaryNode.nodeId,
-        location: decision.primaryNode.location,
-        latency: decision.primaryNode.latencyMs,
-        reputation: decision.primaryNode.reputation,
-      };
+      const decision: any = await response.json();
+      
+      // Check if we have the expected structure
+      if (decision && decision.primaryNode && decision.primaryNode.nodeId) {
+        return {
+          id: decision.primaryNode.nodeId,
+          location: decision.primaryNode.location,
+          latency: decision.primaryNode.latencyMs || 50,
+          reputation: decision.primaryNode.reputation || 80,
+        };
+      }
+      
+      // If response structure is unexpected, use fallback
+      console.warn('Unexpected API response structure, using fallback node');
+      throw new Error('Invalid response structure');
     } catch (error) {
-      console.error('Failed to fetch optimal node:', error);
+      // Only log if it's not a network error (routing engine not running)
+      if (error instanceof Error && !error.message.includes('fetch')) {
+        console.debug('Routing engine unavailable, using fallback node');
+      }
       
       return {
         id: 'fallback-node',
@@ -275,16 +289,25 @@ export class VeilPool extends EventEmitter {
     
     try {
       const response = await fetch(`${routingEngineUrl}/api/nodes/${nodeId}`);
-      const node = await response.json();
       
-      return {
-        id: node.nodeId,
-        location: node.location,
-        latency: node.latencyMs,
-        reputation: node.reputation,
-      };
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`);
+      }
+      
+      const node: any = await response.json();
+      
+      if (node && node.nodeId) {
+        return {
+          id: node.nodeId,
+          location: node.location || 'Unknown',
+          latency: node.latencyMs || 50,
+          reputation: node.reputation || 80,
+        };
+      }
+      
+      throw new Error('Invalid node response structure');
     } catch (error) {
-      throw new Error(`Failed to fetch node info: ${error}`);
+      throw new Error(`Failed to fetch node info: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
