@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeilPool</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 360px;
+      height: 520px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .container {
+      padding: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.connected {
+      background: #10b981;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .status-card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .status-text {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+
+    .connect-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .connect-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .connect-btn.connected {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .node-info {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .node-info.active {
+      display: block;
+    }
+
+    .node-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .node-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .node-label {
+      opacity: 0.7;
+    }
+
+    .node-value {
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .footer {
+      margin-top: auto;
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .wallet-section {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .wallet-address {
+      font-family: monospace;
+      opacity: 0.8;
+      word-break: break-all;
+    }
+
+    .settings-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">🛡️</div>
+        <span>VeilPool</span>
+      </div>
+      <div class="status-indicator" id="statusIndicator"></div>
+    </div>
+
+    <div class="status-card">
+      <div class="status-text" id="statusText">Not Connected</div>
+      <button class="connect-btn" id="connectBtn">
+        Connect
+      </button>
+    </div>
+
+    <div class="wallet-section">
+      <div class="node-row">
+        <span class="node-label">Wallet</span>
+        <button class="settings-btn" id="connectWalletBtn">Connect Wallet</button>
+      </div>
+      <div class="wallet-address" id="walletAddress" style="display: none; margin-top: 8px;"></div>
+    </div>
+
+    <div class="node-info" id="nodeInfo">
+      <div class="node-row">
+        <span class="node-label">🌍 Location</span>
+        <span class="node-value" id="nodeLocation">-</span>
+      </div>
+      <div class="node-row">
+        <span class="node-label">⚡ Latency</span>
+        <span class="node-value" id="nodeLatency">-</span>
+      </div>
+      <div class="node-row">
+        <span class="node-label">⭐ Reputation</span>
+        <span class="node-value" id="nodeReputation">-</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value" id="dataUsed">0 MB</div>
+        <div class="stat-label">Data Used</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="timeConnected">0m</div>
+        <div class="stat-label">Session Time</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a href="https://veilpool.io" target="_blank">Website</a> •
+      <a href="https://veilpool.io/purchase" target="_blank">Buy Pass</a> •
+      <a href="#" id="settingsLink">Settings</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
