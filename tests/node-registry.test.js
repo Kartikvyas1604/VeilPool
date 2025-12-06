@@ -42,126 +42,163 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const chai_1 = require("chai");
+const globals_1 = require("@jest/globals");
 const web3_js_1 = require("@solana/web3.js");
 const anchor_1 = require("@coral-xyz/anchor");
 const anchor = __importStar(require("@coral-xyz/anchor"));
-describe('Node Registry Program', () => {
+(0, globals_1.describe)('Node Registry Program', () => {
     const provider = anchor_1.AnchorProvider.env();
     anchor.setProvider(provider);
     const program = anchor.workspace.NodeRegistry;
     let nodeOperator;
     let nodeAccount;
-    let stakeVault;
-    before(() => __awaiter(void 0, void 0, void 0, function* () {
+    (0, globals_1.beforeAll)(() => __awaiter(void 0, void 0, void 0, function* () {
         nodeOperator = web3_js_1.Keypair.generate();
         // Airdrop SOL to operator
         const airdropSignature = yield provider.connection.requestAirdrop(nodeOperator.publicKey, 10 * web3_js_1.LAMPORTS_PER_SOL);
         yield provider.connection.confirmTransaction(airdropSignature);
     }));
-    it('Registers a new VPN node', () => __awaiter(void 0, void 0, void 0, function* () {
-        const country = 'US';
-        const city = 'San Francisco';
-        const bandwidth = 1000; // 1 Gbps in Mbps
-        const stakeAmount = new anchor.BN(5 * web3_js_1.LAMPORTS_PER_SOL);
+    (0, globals_1.it)('Registers a new VPN node', () => __awaiter(void 0, void 0, void 0, function* () {
+        const location = 'US-CA-SanFrancisco';
+        const ipAddress = '192.168.1.1';
+        const bandwidthGbps = 10;
         [nodeAccount] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('node'), nodeOperator.publicKey.toBuffer()], program.programId);
-        [stakeVault] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('stake-vault'), nodeAccount.toBuffer()], program.programId);
+        const [globalRegistry] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('registry')], program.programId);
         const tx = yield program.methods
-            .registerNode(country, city, bandwidth)
+            .registerNode(location, ipAddress, bandwidthGbps)
             .accounts({
-            node: nodeAccount,
+            nodeAccount: nodeAccount,
+            globalRegistry: globalRegistry,
             operator: nodeOperator.publicKey,
-            stakeVault: stakeVault,
             systemProgram: anchor.web3.SystemProgram.programId,
         })
             .signers([nodeOperator])
             .rpc();
         console.log('Register node tx:', tx);
-        const nodeData = yield program.account.node.fetch(nodeAccount);
-        (0, chai_1.expect)(nodeData.operator.toString()).to.equal(nodeOperator.publicKey.toString());
-        (0, chai_1.expect)(nodeData.country).to.equal(country);
-        (0, chai_1.expect)(nodeData.city).to.equal(city);
-        (0, chai_1.expect)(nodeData.bandwidth).to.equal(bandwidth);
-        (0, chai_1.expect)(nodeData.isActive).to.be.true;
-        (0, chai_1.expect)(nodeData.reputation).to.equal(1000); // Initial reputation
+        const nodeData = yield program.account.nodeAccount.fetch(nodeAccount);
+        (0, globals_1.expect)(nodeData.operator.toString()).toBe(nodeOperator.publicKey.toString());
+        (0, globals_1.expect)(nodeData.location).toBe(location);
+        (0, globals_1.expect)(nodeData.ipAddress).toBe(ipAddress);
+        (0, globals_1.expect)(nodeData.bandwidthGbps).toBe(bandwidthGbps);
     }));
-    it('Stakes SOL to node', () => __awaiter(void 0, void 0, void 0, function* () {
-        const stakeAmount = new anchor.BN(2 * web3_js_1.LAMPORTS_PER_SOL);
+    (0, globals_1.it)('Updates node heartbeat', () => __awaiter(void 0, void 0, void 0, function* () {
+        const bandwidthServedGb = new anchor_1.BN(100);
+        const [globalRegistry] = web3_js_1.PublicKey.findProgramAddressSync([Buffer.from('registry')], program.programId);
         const tx = yield program.methods
-            .stakeSol(stakeAmount)
+            .updateHeartbeat(bandwidthServedGb)
             .accounts({
-            node: nodeAccount,
-            operator: nodeOperator.publicKey,
-            stakeVault: stakeVault,
-            systemProgram: anchor.web3.SystemProgram.programId,
-        })
-            .signers([nodeOperator])
-            .rpc();
-        console.log('Stake SOL tx:', tx);
-        const nodeData = yield program.account.node.fetch(nodeAccount);
-        (0, chai_1.expect)(nodeData.totalStake.toNumber()).to.be.greaterThan(0);
-    }));
-    it('Updates node heartbeat', () => __awaiter(void 0, void 0, void 0, function* () {
-        const latency = 50; // 50ms
-        const activeConnections = 10;
-        const tx = yield program.methods
-            .updateHeartbeat(latency, activeConnections)
-            .accounts({
-            node: nodeAccount,
+            nodeAccount: nodeAccount,
+            globalRegistry: globalRegistry,
             operator: nodeOperator.publicKey,
         })
             .signers([nodeOperator])
             .rpc();
         console.log('Update heartbeat tx:', tx);
-        const nodeData = yield program.account.node.fetch(nodeAccount);
-        (0, chai_1.expect)(nodeData.latency).to.equal(latency);
-        (0, chai_1.expect)(nodeData.activeConnections).to.equal(activeConnections);
+        const nodeData = yield program.account.nodeAccount.fetch(nodeAccount);
+        (0, globals_1.expect)(nodeData.totalBandwidthServed.toNumber()).toBeGreaterThan(0);
     }));
-    it('Records earnings for node', () => __awaiter(void 0, void 0, void 0, function* () {
-        const earningsAmount = new anchor.BN(0.1 * web3_js_1.LAMPORTS_PER_SOL);
+    (0, globals_1.it)('Activates a node', () => __awaiter(void 0, void 0, void 0, function* () {
         const tx = yield program.methods
-            .recordEarnings(earningsAmount)
+            .activateNode()
             .accounts({
-            node: nodeAccount,
+            nodeAccount: nodeAccount,
             operator: nodeOperator.publicKey,
         })
             .signers([nodeOperator])
             .rpc();
-        console.log('Record earnings tx:', tx);
-        const nodeData = yield program.account.node.fetch(nodeAccount);
-        (0, chai_1.expect)(nodeData.totalEarnings.toNumber()).to.be.greaterThan(0);
+        console.log('Activate node tx:', tx);
+        const nodeData = yield program.account.nodeAccount.fetch(nodeAccount);
+        (0, globals_1.expect)(nodeData.isActive).toBe(true);
     }));
-    it('Initiates unstake from node', () => __awaiter(void 0, void 0, void 0, function* () {
-        const unstakeAmount = new anchor.BN(1 * web3_js_1.LAMPORTS_PER_SOL);
+    (0, globals_1.it)('Deactivates a node', () => __awaiter(void 0, void 0, void 0, function* () {
         const tx = yield program.methods
-            .unstakeSol(unstakeAmount)
+            .deactivateNode()
             .accounts({
-            node: nodeAccount,
+            nodeAccount: nodeAccount,
             operator: nodeOperator.publicKey,
         })
             .signers([nodeOperator])
             .rpc();
-        console.log('Unstake SOL tx:', tx);
-        const nodeData = yield program.account.node.fetch(nodeAccount);
-        (0, chai_1.expect)(nodeData.unstakeAmount.toNumber()).to.be.greaterThan(0);
-    }));
-    it('Fails to slash non-existent node', () => __awaiter(void 0, void 0, void 0, function* () {
-        const fakeNode = web3_js_1.Keypair.generate();
-        const slashAmount = new anchor.BN(0.5 * web3_js_1.LAMPORTS_PER_SOL);
-        try {
-            yield program.methods
-                .slashNode(slashAmount)
-                .accounts({
-                node: fakeNode.publicKey,
-                authority: nodeOperator.publicKey,
-                stakeVault: stakeVault,
-            })
-                .signers([nodeOperator])
-                .rpc();
-            chai_1.expect.fail('Should have thrown error');
-        }
-        catch (error) {
-            (0, chai_1.expect)(error).to.exist;
-        }
+        console.log('Deactivate node tx:', tx);
+        const nodeData = yield program.account.nodeAccount.fetch(nodeAccount);
+        (0, globals_1.expect)(nodeData.isActive).toBe(false);
     }));
 });
+const tx = await program.methods
+    .stakeSol(stakeAmount)
+    .accounts({
+    node: nodeAccount,
+    operator: nodeOperator.publicKey,
+    stakeVault: stakeVault,
+    systemProgram: anchor.web3.SystemProgram.programId,
+})
+    .signers([nodeOperator])
+    .rpc();
+console.log('Stake SOL tx:', tx);
+const nodeData = await program.account.node.fetch(nodeAccount);
+(0, globals_1.expect)(nodeData.totalStake.toNumber()).to.be.greaterThan(0);
+;
+(0, globals_1.it)('Updates node heartbeat', () => __awaiter(void 0, void 0, void 0, function* () {
+    const latency = 50; // 50ms
+    const activeConnections = 10;
+    const tx = yield program.methods
+        .updateHeartbeat(latency, activeConnections)
+        .accounts({
+        node: nodeAccount,
+        operator: nodeOperator.publicKey,
+    })
+        .signers([nodeOperator])
+        .rpc();
+    console.log('Update heartbeat tx:', tx);
+    const nodeData = yield program.account.node.fetch(nodeAccount);
+    (0, globals_1.expect)(nodeData.latency).to.equal(latency);
+    (0, globals_1.expect)(nodeData.activeConnections).to.equal(activeConnections);
+}));
+(0, globals_1.it)('Records earnings for node', () => __awaiter(void 0, void 0, void 0, function* () {
+    const earningsAmount = new anchor.BN(0.1 * web3_js_1.LAMPORTS_PER_SOL);
+    const tx = yield program.methods
+        .recordEarnings(earningsAmount)
+        .accounts({
+        node: nodeAccount,
+        operator: nodeOperator.publicKey,
+    })
+        .signers([nodeOperator])
+        .rpc();
+    console.log('Record earnings tx:', tx);
+    const nodeData = yield program.account.node.fetch(nodeAccount);
+    (0, globals_1.expect)(nodeData.totalEarnings.toNumber()).to.be.greaterThan(0);
+}));
+(0, globals_1.it)('Initiates unstake from node', () => __awaiter(void 0, void 0, void 0, function* () {
+    const unstakeAmount = new anchor.BN(1 * web3_js_1.LAMPORTS_PER_SOL);
+    const tx = yield program.methods
+        .unstakeSol(unstakeAmount)
+        .accounts({
+        node: nodeAccount,
+        operator: nodeOperator.publicKey,
+    })
+        .signers([nodeOperator])
+        .rpc();
+    console.log('Unstake SOL tx:', tx);
+    const nodeData = yield program.account.node.fetch(nodeAccount);
+    (0, globals_1.expect)(nodeData.unstakeAmount.toNumber()).to.be.greaterThan(0);
+}));
+(0, globals_1.it)('Fails to slash non-existent node', () => __awaiter(void 0, void 0, void 0, function* () {
+    const fakeNode = web3_js_1.Keypair.generate();
+    const slashAmount = new anchor.BN(0.5 * web3_js_1.LAMPORTS_PER_SOL);
+    try {
+        yield program.methods
+            .slashNode(slashAmount)
+            .accounts({
+            node: fakeNode.publicKey,
+            authority: nodeOperator.publicKey,
+            stakeVault: stakeVault,
+        })
+            .signers([nodeOperator])
+            .rpc();
+        globals_1.expect.fail('Should have thrown error');
+    }
+    catch (error) {
+        (0, globals_1.expect)(error).to.exist;
+    }
+}));
+;
