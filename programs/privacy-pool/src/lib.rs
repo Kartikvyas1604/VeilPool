@@ -483,6 +483,7 @@ pub struct PoolAccount {
 
 impl PoolAccount {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 8 + (4 + MAX_POOL_NAME_LEN) + 32 + 8 + 8 + 4 + 8 + 1 + 8 + 8 + 1;
 }
 
@@ -500,6 +501,7 @@ pub struct BeneficiaryAccess {
 
 impl BeneficiaryAccess {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 8 + 32 + 8 + 8 + 8 + 1 + 8;
 }
 

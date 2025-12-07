@@ -557,6 +557,7 @@ pub struct PricingConfig {
 
 impl PricingConfig {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 2 + 8 + 2 + 1;
 }
 
@@ -575,6 +576,7 @@ pub struct PassAccount {
 
 impl PassAccount {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 8 + 8 + (1 + 8) + 8 + 8 + 1 + 1;
 }
 

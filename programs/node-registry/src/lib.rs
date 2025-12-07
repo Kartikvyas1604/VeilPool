@@ -612,6 +612,7 @@ pub struct GlobalRegistry {
 
 impl GlobalRegistry {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 4 + 8 + 32 + 8 + 8;
 }
 
@@ -638,6 +639,7 @@ pub struct NodeAccount {
 
 impl NodeAccount {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 8 + 1 + (4 + 64) + (4 + 45) + 2 + 8 + 1 + 8 + 8 + 1 + 8 + 8 + 2;
 }
 

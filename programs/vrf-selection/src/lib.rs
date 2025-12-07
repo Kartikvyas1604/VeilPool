@@ -150,6 +150,7 @@ pub struct VrfRequest {
 
 impl VrfRequest {
     #[allow(clippy::arithmetic_side_effects)]
+    #[allow(arithmetic_overflow)]
     pub const LEN: usize = 32 + 32 + 8 + 1 + (1 + 32);
 }
 
