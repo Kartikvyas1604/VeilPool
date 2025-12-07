@@ -188,16 +188,28 @@ class VeilPool extends events_1.default {
             const routingEngineUrl = this.config.routingEngineUrl || 'http://localhost:3001';
             try {
                 const response = yield fetch(`${routingEngineUrl}/api/routing/optimal-node?user_location=${userLocation || 'US'}&destination=global&priority=balanced`);
+                if (!response.ok) {
+                    throw new Error(`API responded with status ${response.status}`);
+                }
                 const decision = yield response.json();
-                return {
-                    id: decision.primaryNode.nodeId,
-                    location: decision.primaryNode.location,
-                    latency: decision.primaryNode.latencyMs,
-                    reputation: decision.primaryNode.reputation,
-                };
+                // Check if we have the expected structure
+                if (decision && decision.primaryNode && decision.primaryNode.nodeId) {
+                    return {
+                        id: decision.primaryNode.nodeId,
+                        location: decision.primaryNode.location,
+                        latency: decision.primaryNode.latencyMs || 50,
+                        reputation: decision.primaryNode.reputation || 80,
+                    };
+                }
+                // If response structure is unexpected, use fallback
+                console.warn('Unexpected API response structure, using fallback node');
+                throw new Error('Invalid response structure');
             }
             catch (error) {
-                console.error('Failed to fetch optimal node:', error);
+                // Only log if it's not a network error (routing engine not running)
+                if (error instanceof Error && !error.message.includes('fetch')) {
+                    console.debug('Routing engine unavailable, using fallback node');
+                }
                 return {
                     id: 'fallback-node',
                     location: 'US-WEST',
@@ -234,16 +246,22 @@ class VeilPool extends events_1.default {
             const routingEngineUrl = this.config.routingEngineUrl || 'http://localhost:3001';
             try {
                 const response = yield fetch(`${routingEngineUrl}/api/nodes/${nodeId}`);
+                if (!response.ok) {
+                    throw new Error(`API responded with status ${response.status}`);
+                }
                 const node = yield response.json();
-                return {
-                    id: node.nodeId,
-                    location: node.location,
-                    latency: node.latencyMs,
-                    reputation: node.reputation,
-                };
+                if (node && node.nodeId) {
+                    return {
+                        id: node.nodeId,
+                        location: node.location || 'Unknown',
+                        latency: node.latencyMs || 50,
+                        reputation: node.reputation || 80,
+                    };
+                }
+                throw new Error('Invalid node response structure');
             }
             catch (error) {
-                throw new Error(`Failed to fetch node info: ${error}`);
+                throw new Error(`Failed to fetch node info: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         });
     }
