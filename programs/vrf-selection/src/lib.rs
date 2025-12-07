@@ -93,8 +93,8 @@ fn select_weighted_node(
         }
     }
 
-    #[allow(clippy::arithmetic_side_effects)]
-    Ok(nodes[nodes.len() - 1])
+    // Fallback to last node (should never reach here if weights are correct)
+    nodes.last().copied().ok_or(ErrorCode::NoNodesAvailable.into())
 }
 
 #[derive(Accounts)]
@@ -176,4 +176,6 @@ pub enum ErrorCode {
     AlreadyFulfilled,
     #[msg("Total weight cannot be zero")]
     ZeroTotalWeight,
+    #[msg("No nodes available for selection")]
+    NoNodesAvailable,
 }
