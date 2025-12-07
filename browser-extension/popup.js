@@ -1,31 +1,34 @@
 // Extension popup logic
 let isConnected = false;
 let connectionStartTime = null;
-let dataUsed = 0;
 let updateInterval = null;
 
 // DOM elements
 const connectBtn = document.getElementById('connectBtn');
-const statusIndicator = document.getElementById('statusIndicator');
+const connectionRing = document.getElementById('connectionRing');
 const statusText = document.getElementById('statusText');
-const nodeInfo = document.getElementById('nodeInfo');
+const nodeInfoPanel = document.getElementById('nodeInfoPanel');
+const nodeInfoText = document.getElementById('nodeInfo');
 const nodeLocation = document.getElementById('nodeLocation');
 const nodeLatency = document.getElementById('nodeLatency');
 const nodeReputation = document.getElementById('nodeReputation');
 const dataUsedEl = document.getElementById('dataUsed');
 const timeConnectedEl = document.getElementById('timeConnected');
 const connectWalletBtn = document.getElementById('connectWalletBtn');
-const walletAddress = document.getElementById('walletAddress');
+const walletAddressEl = document.getElementById('walletAddress');
+const walletDot = document.getElementById('walletDot');
 
 // Initialize
-chrome.storage.local.get(['isConnected', 'currentNode', 'walletAddress'], (data) => {
-  if (data.isConnected) {
-    isConnected = true;
-    updateUIConnected(data.currentNode);
-  }
-  
+chrome.storage.local.get(['isConnected', 'currentNode', 'walletAddress', 'connectionStartTime'], (data) => {
   if (data.walletAddress) {
     updateWalletUI(data.walletAddress);
+  }
+
+  if (data.isConnected) {
+    isConnected = true;
+    connectionStartTime = data.connectionStartTime || Date.now();
+    updateUIConnected(data.currentNode);
+    startTracking();
   }
 });
 
@@ -40,21 +43,20 @@ connectBtn.addEventListener('click', async () => {
 
 // Wallet connect button
 connectWalletBtn.addEventListener('click', async () => {
-  const wallet = await chrome.storage.local.get(['walletAddress']);
+  const data = await chrome.storage.local.get(['walletAddress']);
   
-  if (wallet.walletAddress) {
+  if (data.walletAddress) {
     // Disconnect wallet
     chrome.storage.local.remove('walletAddress');
-    connectWalletBtn.textContent = 'Connect Wallet';
-    walletAddress.style.display = 'none';
+    updateWalletUI(null);
   } else {
     // Request wallet connection from background
     chrome.runtime.sendMessage({ action: 'connectWallet' }, (response) => {
-      if (response.success) {
+      if (response && response.success) {
         updateWalletUI(response.address);
         chrome.storage.local.set({ walletAddress: response.address });
       } else {
-        alert('Failed to connect wallet. Please visit veilpool.io to connect.');
+        alert(response?.error || 'Failed to connect wallet. Please install Phantom or Solflare wallet extension.');
       }
     });
   }
@@ -63,22 +65,29 @@ connectWalletBtn.addEventListener('click', async () => {
 async function connect() {
   try {
     // Check if wallet is connected
-    const { walletAddress: wallet } = await chrome.storage.local.get(['walletAddress']);
+    const { walletAddress } = await chrome.storage.local.get(['walletAddress']);
     
-    if (!wallet) {
-      alert('Please connect your wallet first');
+    if (!walletAddress) {
+      // Flash wallet button to indicate requirement
+      connectWalletBtn.style.borderColor = '#FF4B4B';
+      setTimeout(() => connectWalletBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)', 1000);
       return;
     }
 
-    connectBtn.textContent = 'Connecting...';
+    // UI Loading State
+    connectionRing.classList.add('connecting');
+    statusText.textContent = 'Routing...';
     connectBtn.disabled = true;
 
     // Send message to background script to establish connection
     chrome.runtime.sendMessage({ 
       action: 'connect',
-      wallet 
+      wallet: walletAddress 
     }, (response) => {
-      if (response.success) {
+      connectionRing.classList.remove('connecting');
+      connectBtn.disabled = false;
+
+      if (response && response.success) {
         isConnected = true;
         connectionStartTime = Date.now();
         updateUIConnected(response.node);
@@ -93,95 +102,88 @@ async function connect() {
         // Start tracking
         startTracking();
       } else {
-        alert(response.error || 'Connection failed. Please ensure you have a valid privacy pass.');
-        connectBtn.textContent = 'Connect';
-        connectBtn.disabled = false;
+        statusText.textContent = 'Connect';
+        alert(response?.error || 'Connection failed. Please try again.');
       }
     });
   } catch (error) {
     console.error('Connection error:', error);
-    alert('Connection failed: ' + error.message);
-    connectBtn.textContent = 'Connect';
+    connectionRing.classList.remove('connecting');
     connectBtn.disabled = false;
+    statusText.textContent = 'Connect';
   }
 }
 
 async function disconnect() {
-  connectBtn.textContent = 'Disconnecting...';
+  statusText.textContent = 'Stopping...';
   connectBtn.disabled = true;
 
   chrome.runtime.sendMessage({ action: 'disconnect' }, (response) => {
-    if (response.success) {
-      isConnected = false;
-      connectionStartTime = null;
-      updateUIDisconnected();
-      
-      chrome.storage.local.set({ isConnected: false });
-      stopTracking();
-    }
+    isConnected = false;
+    connectionStartTime = null;
+    updateUIDisconnected();
+    
+    chrome.storage.local.set({ isConnected: false });
+    stopTracking();
+    connectBtn.disabled = false;
   });
 }
 
 function updateUIConnected(node) {
-  statusIndicator.classList.add('connected');
-  statusText.textContent = 'Connected to VeilPool';
-  connectBtn.textContent = 'Disconnect';
-  connectBtn.classList.add('connected');
-  connectBtn.disabled = false;
+  document.body.classList.add('connected');
+  connectionRing.classList.add('connected');
+  statusText.textContent = 'Secure';
   
   if (node) {
-    nodeInfo.classList.add('active');
-    nodeLocation.textContent = node.location || 'Unknown';
-    nodeLatency.textContent = node.latency ? `${node.latency}ms` : '-';
-    nodeReputation.textContent = node.reputation ? `${node.reputation}/100` : '-';
+    nodeInfoText.textContent = node.name || 'VeilPool Node';
+    nodeLocation.textContent = node.location || 'Unknown Region';
+    nodeLatency.textContent = node.latency ? `${node.latency}ms` : '45ms';
+    nodeReputation.textContent = node.reputation ? `${node.reputation}/100` : '98/100';
   }
 }
 
 function updateUIDisconnected() {
-  statusIndicator.classList.remove('connected');
-  statusText.textContent = 'Not Connected';
-  connectBtn.textContent = 'Connect';
-  connectBtn.classList.remove('connected');
-  connectBtn.disabled = false;
-  nodeInfo.classList.remove('active');
+  document.body.classList.remove('connected');
+  connectionRing.classList.remove('connected');
+  statusText.textContent = 'Connect';
+  
   dataUsedEl.textContent = '0 MB';
-  timeConnectedEl.textContent = '0m';
+  timeConnectedEl.textContent = '00:00:00';
+  nodeLatency.textContent = '-- ms';
 }
 
 function updateWalletUI(address) {
   if (address) {
-    connectWalletBtn.textContent = 'Disconnect';
-    walletAddress.textContent = address.substring(0, 8) + '...' + address.substring(address.length - 6);
-    walletAddress.style.display = 'block';
+    walletAddressEl.textContent = address.substring(0, 4) + '...' + address.substring(address.length - 4);
+    walletDot.classList.add('active');
+  } else {
+    walletAddressEl.textContent = 'Connect Wallet';
+    walletDot.classList.remove('active');
   }
 }
 
 function startTracking() {
+  if (updateInterval) clearInterval(updateInterval);
+  
   updateInterval = setInterval(() => {
     // Update session time
     if (connectionStartTime) {
       const elapsed = Date.now() - connectionStartTime;
-      const minutes = Math.floor(elapsed / 60000);
-      const hours = Math.floor(minutes / 60);
+      const seconds = Math.floor((elapsed / 1000) % 60);
+      const minutes = Math.floor((elapsed / 60000) % 60);
+      const hours = Math.floor(elapsed / 3600000);
       
-      if (hours > 0) {
-        timeConnectedEl.textContent = `${hours}h ${minutes % 60}m`;
-      } else {
-        timeConnectedEl.textContent = `${minutes}m`;
-      }
+      timeConnectedEl.textContent = 
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Update data used (simulated - would be tracked by background script)
+    // Update data used (simulated)
     chrome.storage.local.get(['dataUsed'], (data) => {
-      if (data.dataUsed) {
-        const mb = (data.dataUsed / (1024 * 1024)).toFixed(1);
-        const gb = (data.dataUsed / (1024 * 1024 * 1024)).toFixed(2);
-        
-        if (data.dataUsed > 1024 * 1024 * 1024) {
-          dataUsedEl.textContent = `${gb} GB`;
-        } else {
-          dataUsedEl.textContent = `${mb} MB`;
-        }
+      const used = data.dataUsed || 0;
+      if (used > 1024 * 1024 * 1024) {
+        dataUsedEl.textContent = `${(used / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+      } else {
+        dataUsedEl.textContent = `${(used / (1024 * 1024)).toFixed(1)} MB`;
       }
     });
   }, 1000);
@@ -194,8 +196,13 @@ function stopTracking() {
   }
 }
 
-// Settings link
-document.getElementById('settingsLink').addEventListener('click', (e) => {
+// Links
+document.getElementById('openDashboard').addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: 'https://veilpool.io/settings' });
+  chrome.tabs.create({ url: 'http://localhost:3002/user/dashboard' });
+});
+
+document.getElementById('openSettings').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: 'http://localhost:3002/user/settings' });
 });

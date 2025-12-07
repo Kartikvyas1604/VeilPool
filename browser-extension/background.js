@@ -21,10 +21,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'connectWallet') {
-    // In a real implementation, this would use Solana wallet adapter
-    // For now, we'll simulate a wallet connection
-    const mockAddress = 'DemoWallet' + Math.random().toString(36).substring(7);
-    sendResponse({ success: true, address: mockAddress });
+    // Detect real Solana wallet (Phantom/Solflare)
+    detectSolanaWallet()
+      .then(address => sendResponse({ success: true, address }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
 });
@@ -215,5 +215,39 @@ setInterval(() => {
       });
   }
 }, 30000); // Check every 30 seconds
+
+// Detect and connect to real Solana wallet
+async function detectSolanaWallet() {
+  return new Promise((resolve, reject) => {
+    // Query active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs || tabs.length === 0) {
+        // No active tab - create new tab with VeilPool app
+        chrome.tabs.create({ url: 'http://localhost:3002' }, () => {
+          reject(new Error('Please connect wallet on VeilPool app (localhost:3002)'));
+        });
+        return;
+      }
+
+      const activeTab = tabs[0];
+      
+      // Send message to content script to detect and connect wallet
+      chrome.tabs.sendMessage(
+        activeTab.id,
+        { action: 'detectWallet' },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            // Content script not loaded or no wallet detected
+            reject(new Error('Please install Phantom or Solflare wallet extension'));
+          } else if (response && response.success) {
+            resolve(response.address);
+          } else {
+            reject(new Error(response?.error || 'Wallet connection failed'));
+          }
+        }
+      );
+    });
+  });
+}
 
 console.log('VeilPool background service worker initialized');
