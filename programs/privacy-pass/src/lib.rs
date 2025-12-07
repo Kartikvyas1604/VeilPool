@@ -585,6 +585,10 @@ pub enum PassType {
     PoolSponsored,
 }
 
+impl Space for PassType {
+    const INIT_SPACE: usize = 1; // 1 byte for enum discriminant
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum SubscriptionType {
     Monthly,
@@ -691,4 +695,6 @@ pub enum ErrorCode {
     InvalidDuration,
     #[msg("Invalid price. Must be greater than 0")]
     InvalidPrice,
+    #[msg("Unauthorized: Signer is not the pass owner")]
+    Unauthorized,
 }
