@@ -44,7 +44,6 @@ describe("node-registry", () => {
     const tx = await program.methods
       .initialize()
       .accounts({
-        globalRegistry,
         authority: authority.publicKey,
         protocolFeeVault: authority.publicKey,
       })
@@ -59,8 +58,6 @@ describe("node-registry", () => {
     const tx = await program.methods
       .registerNode("US-WEST-1", "192.168.1.1", 10)
       .accounts({
-        nodeAccount,
-        globalRegistry,
         operator: operator.publicKey,
       })
       .signers([operator])
@@ -147,8 +144,6 @@ describe("node-registry", () => {
     await program.methods
       .registerNode("EU-CENTRAL-1", "10.0.0.1", 5)
       .accounts({
-        nodeAccount: newNodeAccount,
-        globalRegistry,
         operator: newOperator.publicKey,
       })
       .signers([newOperator])

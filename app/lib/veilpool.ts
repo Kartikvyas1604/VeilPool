@@ -1,5 +1,4 @@
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
 
 // Deployed Program IDs (Devnet - December 7, 2025)
 export const PROGRAM_IDS = {
@@ -48,7 +47,7 @@ export async function getUserPrivacyPass(userPubkey: PublicKey): Promise<{
     const data = accountInfo.data;
     
     // Example parsing (adjust offsets based on your Anchor account layout)
-    const discriminator = data.slice(0, 8);
+    // Discriminator at bytes 0-8
     const remainingGb = Number(data.readBigUInt64LE(8));
     const expiresAt = Number(data.readBigInt64LE(16));
     const isActive = data.readUInt8(24) === 1;
@@ -64,8 +63,20 @@ export async function getUserPrivacyPass(userPubkey: PublicKey): Promise<{
   }
 }
 
+interface NodeInfo {
+  pubkey: string;
+  operator: string;
+  stakeAmount: number;
+  reputation: number;
+  location: string;
+  bandwidthServed: number;
+  uptime: number;
+  lastHeartbeat: number;
+  isActive: boolean;
+}
+
 // Fetch all nodes from Node Registry
-export async function getAllNodes(): Promise<any[]> {
+export async function getAllNodes(): Promise<NodeInfo[]> {
   try {
     const conn = getConnection();
     
@@ -98,7 +109,7 @@ export async function getAllNodes(): Promise<any[]> {
         console.error('Error parsing node:', e);
         return null;
       }
-    }).filter(Boolean);
+    }).filter((node): node is NodeInfo => node !== null);
 
     return nodes;
   } catch (error) {
@@ -107,12 +118,25 @@ export async function getAllNodes(): Promise<any[]> {
   }
 }
 
+interface PoolInfo {
+  pubkey: string;
+  sponsor: string;
+  name: string;
+  totalFunded: number;
+  totalUsed: number;
+  beneficiaryCount: number;
+  allocationPerUser: number;
+  isActive: boolean;
+  createdAt: number;
+}
+
 // Fetch sponsored pools
-export async function getSponsoredPools(sponsorPubkey?: PublicKey): Promise<any[]> {
+export async function getSponsoredPools(sponsorPubkey?: PublicKey): Promise<PoolInfo[]> {
   try {
     const conn = getConnection();
     
-    const filters: any[] = [{ dataSize: 512 }]; // Adjust to PoolAccount size
+    type FilterType = { dataSize: number } | { memcmp: { offset: number; bytes: string } };
+    const filters: FilterType[] = [{ dataSize: 512 }]; // Adjust to PoolAccount size
     
     if (sponsorPubkey) {
       filters.push({
@@ -144,7 +168,7 @@ export async function getSponsoredPools(sponsorPubkey?: PublicKey): Promise<any[
         console.error('Error parsing pool:', e);
         return null;
       }
-    }).filter(Boolean);
+    }).filter((pool): pool is PoolInfo => pool !== null);
 
     return pools;
   } catch (error) {
@@ -153,12 +177,24 @@ export async function getSponsoredPools(sponsorPubkey?: PublicKey): Promise<any[
   }
 }
 
+interface NodeDecision {
+  primaryNode: {
+    nodeId: string;
+    location: string;
+    latencyMs: number;
+    reputation: number;
+    costPerGb: number;
+  };
+  backupNodes: unknown[];
+  reasoning: string;
+}
+
 // Get optimal node from routing engine
 export async function getOptimalNode(params: {
   userLocation?: string;
   destination?: string;
   priority?: 'cost' | 'latency' | 'balanced';
-}): Promise<any> {
+}): Promise<NodeDecision> {
   try {
     const query = new URLSearchParams({
       user_location: params.userLocation || 'US',
@@ -192,12 +228,10 @@ export async function getOptimalNode(params: {
 }
 
 // Purchase privacy pass (transaction builder)
-export async function buildPurchasePassTx(
-  userPubkey: PublicKey,
-  bandwidthGb: number,
-  paymentMint: PublicKey
-): Promise<Transaction> {
+// TODO: Implement full transaction building with actual parameters
+export async function buildPurchasePassTx(): Promise<Transaction> {
   // This would build an actual transaction to purchase a pass
+  // Parameters needed: userPubkey: PublicKey, bandwidthGb: number, paymentMint: PublicKey
   // For now, returning a placeholder
   const tx = new Transaction();
   
@@ -239,7 +273,7 @@ export async function checkServiceHealth(): Promise<{
   return results;
 }
 
-export default {
+const VeilPoolSDK = {
   getConnection,
   getUserPrivacyPass,
   getAllNodes,
@@ -249,3 +283,5 @@ export default {
   checkServiceHealth,
   PROGRAM_IDS,
 };
+
+export default VeilPoolSDK;
