@@ -1,23 +1,67 @@
 {
   "name": "@veilpool/sdk",
   "version": "1.0.0",
-  "description": "VeilPool SDK - 2-line privacy integration for Solana dApps",
+  "description": "Official VeilPool SDK - Add privacy to any Solana dApp in 2 lines of code. AI-powered threat routing, sponsored privacy pools, and composable privacy infrastructure.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Run tests from workspace root\" && exit 0"
   },
-  "keywords": ["solana", "privacy", "vpn", "depin", "sdk"],
-  "author": "VeilPool",
+  "keywords": [
+    "solana",
+    "privacy",
+    "vpn",
+    "depin",
+    "sdk",
+    "decentralized",
+    "web3",
+    "blockchain",
+    "censorship-resistance",
+    "sponsored-pools",
+    "ai-routing"
+  ],
+  "author": {
+    "name": "VeilPool Team",
+    "email": "kartik@veilpool.network",
+    "url": "https://veilpool.network"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kartikvyas1604/VeilPool.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/Kartikvyas1604/VeilPool/issues"
+  },
+  "homepage": "https://docs.veilpool.network",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "^1.87.0"
+  },
   "dependencies": {
-    "@solana/web3.js": "^1.87.6",
     "@coral-xyz/anchor": "^0.31.1"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }
