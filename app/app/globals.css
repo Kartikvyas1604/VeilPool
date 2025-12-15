@@ -1,67 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-background: #09090b; /* Zinc 950 */
+  --color-foreground: #fafafa; /* Zinc 50 */
+
+  --color-primary: #3b82f6; /* Blue 500 - Professional Blue */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #27272a; /* Zinc 800 */
+  --color-secondary-foreground: #fafafa;
+
+  --color-accent: #f43f5e; /* Rose 500 */
+  --color-accent-foreground: #ffffff;
+
+  --color-surface: #18181b; /* Zinc 900 */
+  --color-surface-hover: #27272a; /* Zinc 800 */
+  --color-border: #27272a; /* Zinc 800 */
+
+  --animate-fade-in: fadeIn 0.5s ease-out forwards;
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
 
 :root {
-  --background: #050505;
-  --foreground: #ededed;
+  --background: #09090b;
+  --foreground: #fafafa;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Professional Card Styles */
+.pro-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem; /* 12px */
+  transition: all 0.2s ease-in-out;
+}
+
+.pro-card:hover {
+  border-color: #3f3f46; /* Zinc 700 */
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Clean Inputs */
+.pro-input {
+  background-color: #09090b;
+  border: 1px solid var(--color-border);
+  color: var(--foreground);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.pro-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Custom Scrollbar - Minimal */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: #3f3f46;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00f0ff;
-}
-
-/* Glassmorphism Utilities */
-.glass-panel {
-  background: rgba(16, 16, 16, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 240, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
-}
-
-/* Neon Text */
-.text-glow {
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-}
-
-.text-glow-purple {
-  text-shadow: 0 0 10px rgba(112, 0, 255, 0.5);
-}
-
-/* Grid Background */
-.bg-grid {
-  background-size: 50px 50px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background: #52525b;
 }

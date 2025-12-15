@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
-import { Shield, Globe, Zap, Lock, Server, Activity } from 'lucide-react';
+import { Shield, Globe, Zap, Lock, Server, Activity, ArrowRight } from 'lucide-react';
 import { NeonButton } from '@/components/ui/NeonButton';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { StatsCard } from '@/components/ui/StatsCard';
@@ -15,26 +15,21 @@ const WalletMultiButton = dynamic(
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-hidden selection:bg-primary/30">
-      {/* Background Effects */}
-      <div className="fixed inset-0 bg-grid opacity-20 pointer-events-none" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-20" />
-      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-secondary/20 blur-[120px] rounded-full pointer-events-none opacity-20" />
-
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <nav className="sticky top-0 w-full z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Shield className="text-white" size={24} />
+            <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+              <Shield className="text-white" size={20} />
             </div>
-            <span className="text-2xl font-bold tracking-tighter">VEIL<span className="text-primary">POOL</span></span>
+            <span className="text-xl font-semibold">VeilPool</span>
           </div>
           
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-            <Link href="#features" className="hover:text-primary transition-colors">Features</Link>
-            <Link href="#network" className="hover:text-primary transition-colors">Network</Link>
-            <Link href="#governance" className="hover:text-primary transition-colors">Governance</Link>
+          <div className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
+            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+            <Link href="#network" className="hover:text-white transition-colors">Network</Link>
+            <Link href="/explorer" className="hover:text-white transition-colors">Explorer</Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -44,38 +39,37 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto text-center">
+      <section className="relative pt-24 pb-16 px-6">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-4xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm text-gray-300">Mainnet Beta Live</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs text-zinc-400">Devnet Beta Live</span>
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-8 leading-tight">
-              Reclaim Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-secondary animate-pulse-slow">
-                Digital Sovereignty
-              </span>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+              Reclaim Your<br />
+              <span className="text-blue-500">Digital Sovereignty</span>
             </h1>
             
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+            <p className="text-lg text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
               The world's first DePIN privacy infrastructure powered by AI routing and sponsored pools. 
               Anonymous, unstoppable, and free for those who need it most.
             </p>
 
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/user/dashboard">
-                <NeonButton className="w-full md:w-auto min-w-[200px]">
-                  Launch App
+                <NeonButton size="lg" className="w-full sm:w-auto">
+                  Launch App <ArrowRight size={16} />
                 </NeonButton>
               </Link>
               <Link href="/node-operator/register">
-                <NeonButton variant="secondary" glow={false} className="w-full md:w-auto min-w-[200px]">
+                <NeonButton variant="outline" size="lg" className="w-full sm:w-auto">
                   Run a Node
                 </NeonButton>
               </Link>
@@ -83,26 +77,26 @@ export default function Home() {
           </motion.div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20">
             <StatsCard 
               title="Active Nodes" 
               value="1,248" 
               icon={Server} 
-              trend="+12% this week" 
+              trend="+12%" 
               trendUp={true} 
             />
             <StatsCard 
               title="Protected Traffic" 
               value="4.2 PB" 
               icon={Activity} 
-              trend="+8% this week" 
+              trend="+8%" 
               trendUp={true} 
             />
             <StatsCard 
               title="Threats Blocked" 
               value="892K" 
               icon={Shield} 
-              trend="AI Detection Active" 
+              trend="Live" 
               trendUp={true} 
             />
           </div>
@@ -110,46 +104,66 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-32 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold mb-4">Next-Gen Privacy Architecture</h2>
-            <p className="text-gray-400">Built on Solana for speed, powered by AI for security.</p>
+      <section id="features" className="py-24 px-6 bg-zinc-950/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Enterprise-Grade Privacy</h2>
+            <p className="text-zinc-400">Built on Solana for speed, powered by AI for security.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <GlassCard className="group">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Globe className="text-primary" size={32} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <GlassCard>
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
+                <Globe className="text-blue-400" size={24} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Sponsored Pools</h3>
-              <p className="text-gray-400 leading-relaxed">
-                NGOs and organizations can fund privacy pools, allowing users in restricted regions to access the internet for free.
+              <h3 className="text-xl font-semibold mb-2">Sponsored Pools</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                NGOs and organizations fund privacy pools, allowing users in restricted regions to access the internet for free.
               </p>
             </GlassCard>
 
-            <GlassCard className="group">
-              <div className="w-14 h-14 rounded-xl bg-secondary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Zap className="text-secondary" size={32} />
+            <GlassCard>
+              <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center mb-4">
+                <Zap className="text-yellow-400" size={24} />
               </div>
-              <h3 className="text-xl font-bold mb-3">AI-Powered Routing</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Our routing engine analyzes real-time censorship data to route traffic through the safest and fastest nodes automatically.
+              <h3 className="text-xl font-semibold mb-2">AI-Powered Routing</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                Real-time censorship detection with sub-100ms routing decisions. Automatically avoid blocked regions.
               </p>
             </GlassCard>
 
-            <GlassCard className="group">
-              <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Lock className="text-accent" size={32} />
+            <GlassCard>
+              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4">
+                <Lock className="text-green-400" size={24} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Zero-Knowledge Access</h3>
-              <p className="text-gray-400 leading-relaxed">
+              <h3 className="text-xl font-semibold mb-2">Zero-Knowledge Access</h3>
+              <p className="text-zinc-400 text-sm leading-relaxed">
                 Access the network using Privacy Passes. No personal data is ever collected, stored, or transmitted.
               </p>
             </GlassCard>
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-800 py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                <Shield className="text-white" size={16} />
+              </div>
+              <span className="text-lg font-semibold">VeilPool</span>
+            </div>
+            <p className="text-sm text-zinc-500">© 2025 VeilPool. Building privacy infrastructure on Solana.</p>
+            <div className="flex gap-6 text-sm text-zinc-400">
+              <a href="#" className="hover:text-white">Docs</a>
+              <a href="#" className="hover:text-white">GitHub</a>
+              <a href="#" className="hover:text-white">Discord</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -11,24 +11,23 @@ interface StatsCardProps {
 
 export const StatsCard = ({ title, value, icon: Icon, trend, trendUp }: StatsCardProps) => {
   return (
-    <GlassCard className="relative overflow-hidden group">
-      <div className="absolute -right-6 -top-6 opacity-10 group-hover:opacity-20 transition-opacity">
-        <Icon size={100} />
-      </div>
-      <div className="flex items-center gap-4 mb-4">
-        <div className="p-3 rounded-lg bg-primary/10 text-primary">
-          <Icon size={24} />
+    <GlassCard className="relative overflow-hidden">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-sm text-zinc-400 font-medium mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-white">{value}</h3>
         </div>
-        <h3 className="text-gray-400 font-medium">{title}</h3>
+        <div className="p-3 rounded-lg bg-zinc-800/50">
+          <Icon size={20} className="text-blue-400" />
+        </div>
       </div>
-      <div className="flex items-end gap-3">
-        <span className="text-3xl font-bold text-white">{value}</span>
-        {trend && (
-          <span className={`text-sm mb-1 ${trendUp ? 'text-green-400' : 'text-red-400'}`}>
-            {trend}
+      {trend && (
+        <div className="flex items-center gap-1 text-xs">
+          <span className={trendUp ? 'text-green-400' : 'text-red-400'}>
+            {trendUp ? '↑' : '↓'} {trend}
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </GlassCard>
   );
 };

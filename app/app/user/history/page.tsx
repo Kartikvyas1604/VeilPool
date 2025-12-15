@@ -40,7 +40,7 @@ export default function UserHistoryPage() {
   const [activeTab, setActiveTab] = useState<'passes' | 'transactions'>('passes');
   const [totalSpent, setTotalSpent] = useState({ SOL: 0, USDC: 0, USDT: 0 });
 
-  const PRIVACY_PASS_PROGRAM_ID = new PublicKey('3GhTHrwxvgYVp1234567890abcdefghijklmnop');
+  const PRIVACY_PASS_PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID!);
 
   useEffect(() => {
     if (publicKey) {

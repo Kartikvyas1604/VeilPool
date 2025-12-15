@@ -2,22 +2,22 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
-interface GlassCardProps {
+interface CardProps {
   children: ReactNode;
   className?: string;
-  hoverEffect?: boolean;
+  hover?: boolean;
 }
 
-export const GlassCard = ({ children, className, hoverEffect = true }: GlassCardProps) => {
+export const GlassCard = ({ children, className, hover = true }: CardProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
       className={cn(
-        "glass-card p-6 rounded-xl border border-white/5 bg-white/5 backdrop-blur-md",
-        hoverEffect && "hover:border-primary/50 hover:bg-white/10 transition-all duration-300",
+        "pro-card p-6",
+        hover && "cursor-pointer",
         className
       )}
     >
