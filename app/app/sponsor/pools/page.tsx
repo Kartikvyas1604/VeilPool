@@ -59,7 +59,7 @@ export default function SponsorPools() {
         const data = account.account.data;
         // Parse the account data (simplified - would use IDL in production)
         return {
-          poolId: data.readBigUInt64LE(40),
+          poolId: Number(data.readBigUInt64LE(40)),
           name: data.slice(48, 176).toString('utf8').replace(/\0/g, ''),
           totalFunded: Number(data.readBigUInt64LE(176)),
           totalUsed: Number(data.readBigUInt64LE(184)),

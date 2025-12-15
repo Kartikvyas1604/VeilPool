@@ -67,7 +67,7 @@ export default function PurchasePage() {
   const [processing, setProcessing] = useState(false);
   const [tokenBalances, setTokenBalances] = useState({ SOL: 0, USDC: 0, USDT: 0 });
 
-  const PRIVACY_PASS_PROGRAM_ID = new PublicKey('3GhTHrwxvgYVp1234567890abcdefghijklmnop');
+  const PRIVACY_PASS_PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID!);
   const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Mainnet USDC
   const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'); // Mainnet USDT
 
