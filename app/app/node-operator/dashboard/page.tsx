@@ -22,6 +22,8 @@ interface NodeData {
   registeredAt: number;
 }
 
+const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
+
 export default function NodeOperatorDashboard() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
@@ -32,23 +34,7 @@ export default function NodeOperatorDashboard() {
   const [activeConnections, setActiveConnections] = useState(0);
   const [earningsHistory, setEarningsHistory] = useState<Array<{ date: string; amount: number }>>([]);
 
-  const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
-
-  useEffect(() => {
-    if (publicKey) {
-      fetchNodeData();
-      
-      // Simulate real-time updates
-      const interval = setInterval(() => {
-        setCurrentLatency(Math.floor(Math.random() * 30) + 20);
-        setActiveConnections(Math.floor(Math.random() * 50) + 10);
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }
-  }, [publicKey, connection, fetchNodeData]);
-
-  const fetchNodeData = async () => {
+  const fetchNodeData = useCallback(async () => {
     if (!publicKey) return;
 
     setLoading(true);
@@ -124,8 +110,12 @@ export default function NodeOperatorDashboard() {
   useEffect(() => {
     if (publicKey) {
       fetchNodeData();
-
-      const interval = setInterval(fetchNodeData, 30000);
+      
+      // Simulate real-time updates
+      const interval = setInterval(() => {
+        setCurrentLatency(Math.floor(Math.random() * 30) + 20);
+        setActiveConnections(Math.floor(Math.random() * 50) + 10);
+      }, 3000);
 
       return () => clearInterval(interval);
     }

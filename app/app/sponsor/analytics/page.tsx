@@ -202,7 +202,7 @@ export default function SponsorAnalytics() {
     } finally {
       setLoading(false);
     }
-  }, [publicKey, connection, timeRange]);
+  }, [publicKey, connection, PRIVACY_POOL_PROGRAM_ID, selectedPool]);
 
   useEffect(() => {
     if (publicKey) {

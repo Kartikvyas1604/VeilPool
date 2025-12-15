@@ -19,6 +19,9 @@ interface PricingTier {
   popular?: boolean;
 }
 
+const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB');
+
 const PRICING_TIERS: PricingTier[] = [
   {
     id: 'basic',
@@ -68,14 +71,6 @@ export default function PurchasePage() {
   const [tokenBalances, setTokenBalances] = useState({ SOL: 0, USDC: 0, USDT: 0 });
 
   const PRIVACY_PASS_PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID!);
-  const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Mainnet USDC
-  const USDT_MINT = new PublicKey('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'); // Mainnet USDT
-
-  useEffect(() => {
-    if (publicKey) {
-      fetchBalances();
-    }
-  }, [publicKey, connection]);
 
   const fetchBalances = useCallback(async () => {
     if (!publicKey) return;
@@ -102,7 +97,13 @@ export default function PurchasePage() {
     } catch (error) {
       console.error('Error fetching balances:', error);
     }
-  };
+  }, [publicKey, connection]);
+
+  useEffect(() => {
+    if (publicKey) {
+      fetchBalances();
+    }
+  }, [publicKey, fetchBalances]);
 
   const handlePurchase = async (tier: PricingTier) => {
     if (!publicKey) {
