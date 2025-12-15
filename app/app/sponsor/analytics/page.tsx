@@ -2,7 +2,7 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
@@ -40,17 +40,10 @@ export default function SponsorAnalytics() {
   const [networkImpact, setNetworkImpact] = useState<NetworkImpact | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [loading, setLoading] = useState(true);
-  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf' | 'json'>('csv');
 
   const PRIVACY_POOL_PROGRAM_ID = new PublicKey('H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e');
 
-  useEffect(() => {
-    if (publicKey) {
-      fetchAnalytics();
-    }
-  }, [publicKey, connection, timeRange]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     if (!publicKey) return;
 
     setLoading(true);
@@ -209,7 +202,13 @@ export default function SponsorAnalytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey, connection, timeRange]);
+
+  useEffect(() => {
+    if (publicKey) {
+      fetchAnalytics();
+    }
+  }, [publicKey, fetchAnalytics]);
 
   const exportData = (format: 'csv' | 'pdf' | 'json') => {
     if (!selectedPool) return;
@@ -248,6 +247,7 @@ export default function SponsorAnalytics() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const formatNumber = (num: number) => {
     if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
@@ -264,13 +264,15 @@ export default function SponsorAnalytics() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/sponsor/pools" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
@@ -294,7 +296,7 @@ export default function SponsorAnalytics() {
           <div className="flex space-x-2">
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as any)}
+              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d' | 'all')}
               className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-purple-500"
             >
               <option value="7d">Last 7 Days</option>
@@ -320,7 +322,7 @@ export default function SponsorAnalytics() {
             {/* Network Impact Overview */}
             {networkImpact && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+                <div className="pro-card p-6">
                   <p className="text-sm text-gray-400 mb-1">Total Bandwidth</p>
                   <p className="text-2xl font-bold">{networkImpact.totalGBServed.toFixed(1)} GB</p>
                 </div>
@@ -368,7 +370,7 @@ export default function SponsorAnalytics() {
                     </div>
                     <div className="mt-2 bg-white/10 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full"
+                        className="bg-blue-500 h-2 rounded-full"
                         style={{ width: `${(pool.totalUsed / pool.totalFunded) * 100}%` }}
                       ></div>
                     </div>
@@ -441,7 +443,7 @@ export default function SponsorAnalytics() {
                   </div>
 
                   {/* Impact Score Card */}
-                  <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-2xl p-6">
+                  <div className="pro-card p-6">
                     <h3 className="text-xl font-bold mb-4">Impact Score</h3>
                     <div className="flex items-center justify-center mb-6">
                       <div className="relative w-48 h-48">
@@ -487,7 +489,7 @@ export default function SponsorAnalytics() {
                         <div className="flex items-center space-x-2">
                           <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                              className="h-full bg-blue-500"
                               style={{ width: `${(selectedPool.activeUsers / selectedPool.beneficiaryCount) * 100}%` }}
                             ></div>
                           </div>

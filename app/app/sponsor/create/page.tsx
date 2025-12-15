@@ -5,14 +5,13 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
-import { Program, AnchorProvider, web3, BN } from '@coral-xyz/anchor';
-import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
+import { web3 } from '@coral-xyz/anchor';
 
 export default function CreatePool() {
   const router = useRouter();
   const { publicKey, signTransaction, sendTransaction } = useWallet();
-  const { connection } = useConnection();
+  useConnection();
   
   const [poolName, setPoolName] = useState('');
   const [description, setDescription] = useState('');
@@ -50,7 +49,7 @@ export default function CreatePool() {
         PRIVACY_POOL_PROGRAM_ID
       );
 
-      const [poolVault] = PublicKey.findProgramAddressSync(
+      PublicKey.findProgramAddressSync(
         [Buffer.from('pool-vault'), poolAccount.toBuffer()],
         PRIVACY_POOL_PROGRAM_ID
       );
@@ -118,13 +117,15 @@ export default function CreatePool() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/sponsor/pools" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
@@ -283,7 +284,7 @@ export default function CreatePool() {
               </div>
 
               {/* Summary */}
-              <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-6 border border-purple-500/20">
+              <div className="pro-card p-6 bg-blue-500/5">
                 <h3 className="font-bold mb-4 text-lg">Pool Summary</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -313,7 +314,7 @@ export default function CreatePool() {
               <button
                 onClick={handleCreate}
                 disabled={creating || !poolName || !fundingAmount}
-                className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-all font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {creating ? (
                   <span className="flex items-center justify-center">

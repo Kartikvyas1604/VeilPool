@@ -2,11 +2,11 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
-import { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 
 interface PricingTier {
   id: string;
@@ -77,7 +77,7 @@ export default function PurchasePage() {
     }
   }, [publicKey, connection]);
 
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     if (!publicKey) return;
 
     try {
@@ -143,7 +143,7 @@ export default function PurchasePage() {
         // SPL Token payment
         const mint = selectedToken === 'USDC' ? USDC_MINT : USDT_MINT;
         const userTokenAccount = await getAssociatedTokenAddress(mint, publicKey);
-        const treasuryTokenAccount = await getAssociatedTokenAddress(
+        await getAssociatedTokenAddress(
           mint,
           new PublicKey('VeiLPooL1111111111111111111111111111111111')
         );
@@ -186,13 +186,15 @@ export default function PurchasePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/user/history" className="text-gray-300 hover:text-white transition-colors">
@@ -258,7 +260,7 @@ export default function PurchasePage() {
             >
               {tier.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-1 rounded-full text-xs font-bold">
+                  <span className="bg-blue-600 px-4 py-1 rounded-full text-xs font-bold">
                     MOST POPULAR
                   </span>
                 </div>
@@ -287,8 +289,8 @@ export default function PurchasePage() {
                 disabled={processing || !publicKey}
                 className={`w-full py-3 rounded-lg font-bold transition-all ${
                   tier.popular
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
-                    : 'bg-white/10 hover:bg-white/20'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-white/5 hover:bg-white/10'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {processing && selectedTier?.id === tier.id ? 'Processing...' : 'Purchase Now'}

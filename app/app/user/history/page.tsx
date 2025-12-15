@@ -200,13 +200,15 @@ export default function UserHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/user/purchase" className="text-gray-300 hover:text-white transition-colors">
@@ -241,7 +243,7 @@ export default function UserHistoryPage() {
           <>
             {/* Summary Stats */}
             <div className="grid md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+              <div className="pro-card p-6">
                 <p className="text-sm text-gray-400 mb-1">Active Passes</p>
                 <p className="text-3xl font-bold">{passes.filter((p) => p.status === 'active').length}</p>
               </div>

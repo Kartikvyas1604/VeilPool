@@ -2,7 +2,7 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
@@ -46,7 +46,7 @@ export default function NodeOperatorDashboard() {
 
       return () => clearInterval(interval);
     }
-  }, [publicKey, connection]);
+  }, [publicKey, connection, fetchNodeData]);
 
   const fetchNodeData = async () => {
     if (!publicKey) return;
@@ -119,7 +119,17 @@ export default function NodeOperatorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey, connection]);
+
+  useEffect(() => {
+    if (publicKey) {
+      fetchNodeData();
+
+      const interval = setInterval(fetchNodeData, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [publicKey, fetchNodeData]);
 
   const sendHeartbeat = async () => {
     if (!publicKey || !nodeData) return;
@@ -172,13 +182,15 @@ export default function NodeOperatorDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/node-operator/settings" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
@@ -209,7 +221,7 @@ export default function NodeOperatorDashboard() {
         ) : !nodeData ? (
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-12 text-center">
             <h2 className="text-2xl font-bold mb-4">No Node Registered</h2>
-            <p className="text-gray-400 mb-6">You haven't registered a node yet</p>
+            <p className="text-gray-400 mb-6">You haven&apos;t registered a node yet</p>
             <Link
               href="/node-operator/register"
               className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors font-medium"
@@ -246,12 +258,12 @@ export default function NodeOperatorDashboard() {
 
             {/* Key Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+                <div className="pro-card p-6">
                 <p className="text-sm text-gray-400 mb-1">Reputation Score</p>
                 <p className="text-3xl font-bold">{nodeData.reputation}/100</p>
                 <div className="mt-2 bg-white/10 rounded-full h-1.5">
                   <div
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full"
+                    className="bg-blue-500 h-1.5 rounded-full"
                     style={{ width: `${nodeData.reputation}%` }}
                   ></div>
                 </div>
@@ -444,7 +456,7 @@ export default function NodeOperatorDashboard() {
                     </div>
                     <div className="bg-white/10 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full"
+                        className="bg-blue-500 h-2 rounded-full"
                         style={{ width: `${nodeData.reputation}%` }}
                       ></div>
                     </div>

@@ -2,7 +2,7 @@
 
 import { useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 
@@ -54,18 +54,7 @@ export default function ExplorerPage() {
 
   const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
 
-  useEffect(() => {
-    fetchNetworkData();
-    
-    // Real-time updates every 10 seconds
-    const interval = setInterval(() => {
-      updateRealTimeStats();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [connection]);
-
-  const fetchNetworkData = async () => {
+  const fetchNetworkData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch all node accounts from the program
@@ -116,7 +105,18 @@ export default function ExplorerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [connection]);
+
+  useEffect(() => {
+    fetchNetworkData();
+    
+    // Real-time updates every 10 seconds
+    const interval = setInterval(() => {
+      updateRealTimeStats();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchNetworkData]);
 
   const updateRealTimeStats = () => {
     setNodes(prevNodes =>
@@ -141,13 +141,15 @@ export default function ExplorerPage() {
       });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      <nav className="border-b border-white/10 backdrop-blur-sm bg-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg"></div>
-              <span className="text-2xl font-bold">VeilPool</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">V</span>
+              </div>
+              <span className="text-xl font-semibold">VeilPool</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/user/purchase" className="text-gray-300 hover:text-white transition-colors">
@@ -162,7 +164,7 @@ export default function ExplorerPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-5xl font-bold mb-2">🌍 Global Network Explorer</h1>
-          <p className="text-xl text-gray-400">Real-time visualization of VeilPool's privacy node network</p>
+          <p className="text-xl text-gray-400">Real-time visualization of VeilPool&apos;s privacy node network</p>
         </div>
 
         {loading ? (
@@ -174,7 +176,7 @@ export default function ExplorerPage() {
           <>
             {/* Network Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+              <div className="pro-card p-6">
                 <p className="text-sm text-gray-400 mb-1">Total Nodes</p>
                 <p className="text-3xl font-bold">{stats.totalNodes}</p>
               </div>
@@ -228,7 +230,7 @@ export default function ExplorerPage() {
                   <path d="M 850 350 Q 900 340 920 380 L 900 420 L 850 410 Z" fill="rgba(100,100,150,0.3)" stroke="rgba(150,150,200,0.5)" strokeWidth="1" />
                   
                   {/* Node Points */}
-                  {nodes.map((node, idx) => {
+                  {nodes.map((node) => {
                     // Convert coordinates to SVG position
                     const x = ((node.coordinates[0] + 180) / 360) * 1000;
                     const y = ((90 - node.coordinates[1]) / 180) * 500;
@@ -397,7 +399,7 @@ export default function ExplorerPage() {
                             <span className="font-medium">{node.reputation}</span>
                             <div className="w-16 bg-white/10 rounded-full h-1.5">
                               <div
-                                className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full"
+                                className="bg-blue-500 h-1.5 rounded-full"
                                 style={{ width: `${node.reputation}%` }}
                               ></div>
                             </div>
