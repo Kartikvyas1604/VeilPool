@@ -13,6 +13,8 @@
     "node_modules",
     "app",
     "packages",
-    "routing-engine"
+    "routing-engine",
+    "sdk",
+    "tests"
   ]
 }
