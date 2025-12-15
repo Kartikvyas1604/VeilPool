@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-node_registry = "4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo"
-privacy_pool = "H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e"
-privacy_pass = "786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH"
-vrf_selection = "4SD36sZLcudbMwUqpd9Efp2iBrN5ihMWj8d59aFAoQFT"
+node_registry = "FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN"
+privacy_pool = "BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA"
+privacy_pass = "Bw98kokEAhjikV167NQEdDsbKe6hUa3Ado3bJNKQPQiZ"
+vrf_selection = "35aknS1cM883peeW1JFZNhC2ooQAAv2D8wEjUisi2wui"
 
 [programs.localnet]
 node_registry = "4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo"
