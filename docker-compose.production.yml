@@ -1,0 +1,211 @@
+# VeilPool Production Docker Compose Configuration
+version: '3.8'
+
+services:
+  # Redis Cache for routing engine
+  redis:
+    image: redis:7-alpine
+    container_name: veilpool-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - veilpool-network
+
+  # PostgreSQL Database (optional, for analytics)
+  postgres:
+    image: postgres:15-alpine
+    container_name: veilpool-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: veilpool
+      POSTGRES_USER: veilpool
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veilpool"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - veilpool-network
+
+  # Routing Engine API
+  routing-engine:
+    build:
+      context: ./routing-engine
+      dockerfile: Dockerfile
+    container_name: veilpool-routing-engine
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - NODE_REGISTRY_PROGRAM_ID=${NODE_REGISTRY_PROGRAM_ID}
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://veilpool:${POSTGRES_PASSWORD:-changeme123}@postgres:5432/veilpool
+      - PYTH_ENDPOINT=https://hermes.pyth.network
+      - LOG_LEVEL=info
+      - ENABLE_METRICS=true
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./routing-engine/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - veilpool-network
+    labels:
+      - "com.veilpool.service=routing-engine"
+      - "com.veilpool.version=1.0.0"
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SOLANA_RPC_URL=${NEXT_PUBLIC_SOLANA_RPC_URL:-https://api.devnet.solana.com}
+        - NEXT_PUBLIC_NODE_REGISTRY_PROGRAM_ID=${NODE_REGISTRY_PROGRAM_ID}
+        - NEXT_PUBLIC_ROUTING_ENGINE_URL=http://routing-engine:3001
+    container_name: veilpool-frontend
+    restart: unless-stopped
+    depends_on:
+      routing-engine:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - veilpool-network
+    labels:
+      - "com.veilpool.service=frontend"
+      - "com.veilpool.version=1.0.0"
+
+  # Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: veilpool-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - veilpool-network
+    labels:
+      - "com.veilpool.service=monitoring"
+
+  # Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: veilpool-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=redis-datasource
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards
+    networks:
+      - veilpool-network
+    labels:
+      - "com.veilpool.service=monitoring"
+
+  # Node Exporter (System metrics)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: veilpool-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - veilpool-network
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: veilpool-nginx
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - routing-engine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - veilpool-network
+    labels:
+      - "com.veilpool.service=reverse-proxy"
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+networks:
+  veilpool-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
