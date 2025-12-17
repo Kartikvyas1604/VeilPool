@@ -81,6 +81,9 @@ pub mod privacy_pool {
         access.last_used = 0;
         access.is_whitelisted = true;
         access.added_at = Clock::get()?.unix_timestamp;
+        access.daily_limit_gb = allocated_gb.checked_div(30).unwrap().max(MIN_ALLOCATION_GB);
+        access.daily_usage_gb = 0;
+        access.total_sessions = 0;
 
         pool.beneficiary_count = pool.beneficiary_count.checked_add(1).unwrap();
 
@@ -153,6 +156,7 @@ pub mod privacy_pool {
     ) -> Result<()> {
         let pool = &ctx.accounts.pool_account;
         let access = &mut ctx.accounts.beneficiary_access;
+        let clock = Clock::get()?;
         
         require!(pool.is_active, ErrorCode::PoolNotActive);
         require!(access.is_whitelisted, ErrorCode::BeneficiaryNotWhitelisted);
@@ -164,8 +168,23 @@ pub mod privacy_pool {
         let pool_remaining = pool.total_funded.checked_sub(pool.total_used).unwrap();
         require!(pool_remaining >= bandwidth_gb, ErrorCode::InsufficientPoolBalance);
 
+        let seconds_per_day: i64 = 86400;
+        let time_since_last = clock.unix_timestamp.checked_sub(access.last_used).unwrap_or(seconds_per_day);
+        
+        if time_since_last >= seconds_per_day {
+            access.daily_usage_gb = bandwidth_gb;
+        } else {
+            access.daily_usage_gb = access.daily_usage_gb.checked_add(bandwidth_gb).unwrap();
+        }
+
+        require!(
+            access.daily_usage_gb <= access.daily_limit_gb,
+            ErrorCode::DailyLimitExceeded
+        );
+
         access.used_gb = access.used_gb.checked_add(bandwidth_gb).unwrap();
-        access.last_used = Clock::get()?.unix_timestamp;
+        access.last_used = clock.unix_timestamp;
+        access.total_sessions = access.total_sessions.checked_add(1).unwrap();
 
         let pool = &mut ctx.accounts.pool_account;
         pool.total_used = pool.total_used.checked_add(bandwidth_gb).unwrap();
@@ -177,7 +196,7 @@ pub mod privacy_pool {
                     pool_id: pool.pool_id,
                     remaining_balance,
                     threshold: pool.auto_refill_threshold,
-                    timestamp: Clock::get()?.unix_timestamp,
+                    timestamp: clock.unix_timestamp,
                 });
             }
         }
@@ -187,7 +206,7 @@ pub mod privacy_pool {
             beneficiary: access.beneficiary,
             bandwidth_gb,
             remaining_allocation: access.allocated_gb.checked_sub(access.used_gb).unwrap(),
-            timestamp: Clock::get()?.unix_timestamp,
+            timestamp: clock.unix_timestamp,
         });
 
         Ok(())
@@ -497,12 +516,15 @@ pub struct BeneficiaryAccess {
     pub last_used: i64,
     pub is_whitelisted: bool,
     pub added_at: i64,
+    pub daily_limit_gb: u64,
+    pub daily_usage_gb: u64,
+    pub total_sessions: u32,
 }
 
 impl BeneficiaryAccess {
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(arithmetic_overflow)]
-    pub const LEN: usize = 8 + 32 + 8 + 8 + 8 + 1 + 8;
+    pub const LEN: usize = 8 + 32 + 8 + 8 + 8 + 1 + 8 + 8 + 8 + 4;
 }
 
 #[event]
@@ -602,4 +624,6 @@ pub enum ErrorCode {
     InsufficientAllocation,
     #[msg("Insufficient balance remaining in pool")]
     InsufficientPoolBalance,
+    #[msg("Daily bandwidth limit exceeded")]
+    DailyLimitExceeded,
 }
