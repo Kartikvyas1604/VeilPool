@@ -70,10 +70,10 @@ export default function SponsorPools() {
           totalFunded: poolData.totalFunded,
           totalUsed: poolData.totalUsed,
           beneficiaryCount: poolData.beneficiaryCount,
-          allocationPerUser: poolData.allocationPerUser,
+          allocationPerUser: poolData.beneficiaryCount > 0 ? poolData.totalFunded / poolData.beneficiaryCount : 0,
           isActive: poolData.isActive,
           createdAt: poolData.createdAt * 1000,
-          sponsor: poolData.sponsor.toBase58(),
+          sponsor: poolData.sponsor,
         };
       });
 

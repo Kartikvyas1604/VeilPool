@@ -79,13 +79,13 @@ export default function UserHistoryPage() {
         const passData = parsePrivacyPassAccount(account.account.data);
         const now = Date.now();
         const expiresAt = passData.expiresAt * 1000;
-        const purchasedAt = passData.mintTimestamp * 1000;
-        const bandwidthUsedGB = passData.bandwidthUsed / (1024 * 1024 * 1024);
-        const bandwidthTotalGB = passData.bandwidthLimit / (1024 * 1024 * 1024);
-        const usagePercent = (bandwidthUsedGB / bandwidthTotalGB) * 100;
+        const purchasedAt = passData.createdAt * 1000;
+        const remainingGB = passData.remainingGb;
+        const totalGB = passData.totalGb;
+        const usagePercent = totalGB > 0 ? ((totalGB - remainingGB) / totalGB) * 100 : 0;
         
         let status: 'active' | 'expired' | 'exhausted';
-        if (usagePercent >= 100) {
+        if (remainingGB <= 0) {
           status = 'exhausted';
         } else if (now > expiresAt) {
           status = 'expired';
@@ -95,16 +95,16 @@ export default function UserHistoryPage() {
 
         return {
           id: account.pubkey.toBase58(),
-          name: `Privacy Pass ${passData.tier}`,
-          bandwidth: `${bandwidthTotalGB.toFixed(1)} GB`,
+          name: `Privacy Pass ${passData.tierId}`,
+          bandwidth: `${totalGB.toFixed(1)} GB`,
           bandwidthUsed: usagePercent,
-          bandwidthTotal: bandwidthTotalGB,
+          bandwidthTotal: totalGB,
           expiresAt,
           purchasedAt,
           status,
           signature: account.pubkey.toBase58().slice(0, 16),
-          price: passData.price / 1e9, // Convert lamports to SOL
-          token: passData.paymentToken.toBase58() === PublicKey.default.toBase58() ? 'SOL' : 'USDC',
+          price: 0, // Price not stored in pass account, would need transaction lookup
+          token: 'SOL', // Would need transaction lookup for actual token used
         };
       });
 
