@@ -1,49 +1,162 @@
+# ========================================
+# VeilPool - Comprehensive .gitignore
+# ========================================
+
 # Dependencies
 node_modules/
 .pnp
 .pnp.js
+jspm_packages/
 
 # Testing
 coverage/
+.nyc_output
+*.lcov
+.jest/
 
-# Production
+# Production Builds
 dist/
 build/
+out/
+*.tsbuildinfo
 
-# Environment
+# Environment Variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
 
 # Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
+lerna-debug.log*
+pnpm-debug.log*
 
-# OS
+# Runtime Data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Operating System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# IDE
+# IDEs and Editors
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
+*.swn
 *~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# Anchor
-.anchor/
+# Rust / Anchor / Solana
 target/
 **/*.rs.bk
-
-# Solana
+Cargo.lock
+.anchor/
 test-ledger/
 .keypairs/
+*.so
 
-# Temporary
+# TypeScript
+*.tsbuildinfo
+.tsbuildinfo
+
+# Next.js
+.next/
+out/
+.vercel
+.turbo
+
+# Package Manager
+.yarn/
+.pnpm-debug.log*
+.pnpm-store/
+
+# Temporary Files
 *.tmp
 *.temp
 .cache/
+.parcel-cache/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Miscellaneous
+.sass-cache/
+*.css.map
+*.sass.map
+*.scss.map
+
+# Archive Files
+*.zip
+*.tar.gz
+*.rar
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# Sensitive Data (Never Commit!)
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+private_key
+*.wallet
+*-keypair.json
+!test-ledger/faucet-keypair.json
+
+# CI/CD
+.github/workflows/*.local.yml
+
+# Monitoring
+prometheus_data/
+grafana_data/
