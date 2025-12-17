@@ -183,9 +183,9 @@ export default function PurchasePage() {
     }
   };
 
-  constConvert SOL price to stablecoin (1 SOL ≈ $100 approximation for UI
-    if (selectedToken === 'SOL') return tier.price;
-    // Simplified conversion (would use real oracle prices in production)
+  const getPriceInToken = (tier: typeof PRIVACY_PASS_TIERS[0]): string => {
+    if (selectedToken === 'SOL') return tier.price.toString();
+    // Convert SOL price to stablecoin (1 SOL ≈ $100 approximation for UI)
     return (tier.price * 100).toFixed(2);
   };
 

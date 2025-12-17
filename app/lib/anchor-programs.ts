@@ -1,5 +1,5 @@
-import { AnchorProvider, Program, web3, BN } from '@coral-xyz/anchor';
-import { Connection, PublicKey, Transaction, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
+import { web3, BN } from '@coral-xyz/anchor';
+import { Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, createTransferInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { PROGRAM_IDS } from './veilpool';
 

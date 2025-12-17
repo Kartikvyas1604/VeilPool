@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
+import { parseNodeAccount } from '@/lib/anchor-programs';
 
 interface NodeData {
   operator: string;
@@ -48,56 +49,49 @@ export default function NodeOperatorDashboard() {
       // Fetch node account data
       const accountInfo = await connection.getAccountInfo(nodeAccount);
 
-      if (accountInfo) {
-        const data = accountInfo.data;
-        
-        // Parse account data (simplified - would use IDL in production)
-        const nodeInfo: NodeData = {
-          operator: publicKey.toBase58(),
-          stakeAmount: Number(data.readBigUInt64LE(8)),
-          reputation: data.readUInt8(40),
-          location: data.slice(60, 124).toString('utf8').replace(/\0/g, ''),
-          ipAddress: data.slice(125, 170).toString('utf8').replace(/\0/g, ''),
-          bandwidthGbps: data.readUInt16LE(41),
-          totalBandwidthServed: Number(data.readBigUInt64LE(43)),
-          uptimePercentage: data.readUInt8(51),
-          lastHeartbeat: Number(data.readBigInt64LE(52)),
-          earningsAccumulated: Number(data.readBigUInt64LE(60)),
-          isActive: data.readUInt8(68) === 1,
-          registeredAt: Number(data.readBigInt64LE(69)),
-        };
+      if (!accountInfo) {
+        setNodeData(null);
+        setIsOnline(false);
+        setEarningsHistory([]);
+        setLoading(false);
+        return;
+      }
 
-        setNodeData(nodeInfo);
-        setIsOnline(Date.now() / 1000 - nodeInfo.lastHeartbeat < 300);
+      // Parse real on-chain node data
+      const parsedNode = parseNodeAccount(accountInfo.data);
+      const nodeInfo: NodeData = {
+        operator: parsedNode.operator,
+        stakeAmount: parsedNode.stakeAmount,
+        reputation: parsedNode.reputation,
+        location: `${parsedNode.country}-${parsedNode.city}`,
+        ipAddress: parsedNode.ipAddress,
+        bandwidthGbps: parsedNode.bandwidthGbps,
+        totalBandwidthServed: parsedNode.totalBandwidthServed,
+        uptimePercentage: parsedNode.uptimePercentage,
+        lastHeartbeat: parsedNode.lastHeartbeat,
+        earningsAccumulated: parsedNode.earningsAccumulated,
+        isActive: parsedNode.isActive,
+        registeredAt: parsedNode.registeredAt * 1000,
+      };
 
-        // Generate earnings history
-        const history = Array.from({ length: 30 }, (_, i) => ({
-          date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          amount: Math.random() * 0.5 + 0.1,
-        }));
-        setEarningsHistory(history);
-      } else {
-        // Demo data if node not found
-        setNodeData({
-          operator: publicKey.toBase58(),
-          stakeAmount: 100 * web3.LAMPORTS_PER_SOL,
-          reputation: 95,
-          location: 'US-San Francisco',
-          ipAddress: '185.227.108.45',
-          bandwidthGbps: 1,
-          totalBandwidthServed: 2540000000000, // 2.54 TB
-          uptimePercentage: 99,
-          lastHeartbeat: Math.floor(Date.now() / 1000) - 120,
-          earningsAccumulated: 12.5 * web3.LAMPORTS_PER_SOL,
-          isActive: true,
-          registeredAt: Date.now() - 45 * 24 * 60 * 60 * 1000,
-        });
+      setNodeData(nodeInfo);
+      setIsOnline(Date.now() / 1000 - parsedNode.lastHeartbeat < 300);
 
-        setEarningsHistory(
-          Array.from({ length: 30 }, (_, i) => ({
-            date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            amount: Math.random() * 0.5 + 0.1,
-          }))
+      // Generate earnings history - would ideally come from event logs
+      const history = Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        amount: 0, // Real earnings from indexed events
+      }));
+      setEarningsHistory(history);
+    } catch (error) {
+      console.error('Error fetching node data:', error);
+      setNodeData(null);
+      setIsOnline(false);
+      setEarningsHistory([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [publicKey, connection]);
         );
       }
     } catch (error) {

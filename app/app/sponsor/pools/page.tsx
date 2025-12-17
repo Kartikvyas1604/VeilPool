@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { parsePrivacyPoolAccount } from '@/lib/anchor-programs';
 
 interface Pool {
   poolId: number;
@@ -55,49 +56,35 @@ export default function SponsorPools() {
         ],
       });
 
-      const poolsData: Pool[] = accounts.map((account) => {
-        const data = account.account.data;
-        // Parse the account data (simplified - would use IDL in production)
+      if (accounts.length === 0) {
+        setPools([]);
+        setLoading(false);
+        return;
+      }
+
+      const poolsData: Pool[] = accounts.map((account, idx) => {
+        const poolData = parsePrivacyPoolAccount(account.account.data);
         return {
-          poolId: Number(data.readBigUInt64LE(40)),
-          name: data.slice(48, 176).toString('utf8').replace(/\0/g, ''),
-          totalFunded: Number(data.readBigUInt64LE(176)),
-          totalUsed: Number(data.readBigUInt64LE(184)),
-          beneficiaryCount: data.readUInt32LE(192),
-          allocationPerUser: Number(data.readBigUInt64LE(196)),
-          isActive: data.readUInt8(204) === 1,
-          createdAt: Number(data.readBigInt64LE(205)),
-          sponsor: publicKey.toBase58(),
+          poolId: idx + 1,
+          name: poolData.name,
+          totalFunded: poolData.totalFunded,
+          totalUsed: poolData.totalUsed,
+          beneficiaryCount: poolData.beneficiaryCount,
+          allocationPerUser: poolData.allocationPerUser,
+          isActive: poolData.isActive,
+          createdAt: poolData.createdAt * 1000,
+          sponsor: poolData.sponsor.toBase58(),
         };
       });
 
       setPools(poolsData);
     } catch (error) {
       console.error('Error fetching pools:', error);
-      // Show mock data for demo if fetch fails
-      setPools([
-        {
-          poolId: 1,
-          name: 'Journalist Privacy Fund',
-          totalFunded: 50000000000, // 50 SOL
-          totalUsed: 12000000000, // 12 SOL
-          beneficiaryCount: 25,
-          allocationPerUser: 100,
-          isActive: true,
-          createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
-          sponsor: publicKey?.toBase58() || '',
-        },
-        {
-          poolId: 2,
-          name: 'Student Access Program',
-          totalFunded: 100000000000, // 100 SOL
-          totalUsed: 35000000000, // 35 SOL
-          beneficiaryCount: 150,
-          allocationPerUser: 50,
-          isActive: true,
-          createdAt: Date.now() - 15 * 24 * 60 * 60 * 1000,
-          sponsor: publicKey?.toBase58() || '',
-        },
+      setPools([]);
+    } finally {
+      setLoading(false);
+    }
+  };
       ]);
     } finally {
       setLoading(false);
