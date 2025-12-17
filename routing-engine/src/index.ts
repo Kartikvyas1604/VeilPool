@@ -13,6 +13,8 @@ import { logger } from './logger';
 import { errorHandler, notFoundHandler, asyncHandler, ValidationError } from './error-handler';
 import { RateLimiter } from './rate-limiter';
 import { randomUUID } from 'crypto';
+import { metrics } from './prometheus-metrics';
+import { routingEngineLogger } from './structured-logging';
 
 dotenv.config();
 
@@ -127,6 +129,43 @@ app.get('/api/health', (req: Request, res: Response) => {
     nodes: nodeMonitor.getNodeCount(),
     uptime: process.uptime(),
   });
+});
+
+// Prometheus metrics endpoint
+app.get('/metrics', (req: Request, res: Response) => {
+  const format = req.query.format as string;
+  
+  if (format === 'json') {
+    res.json(metrics.exportJSON());
+  } else {
+    res.set('Content-Type', 'text/plain');
+    res.send(metrics.exportPrometheusFormat());
+  }
+});
+
+// Metrics summary
+app.get('/api/metrics/summary', (req: Request, res: Response) => {
+  res.json(metrics.getSummary());
+});
+
+// Structured logs endpoint
+app.get('/api/logs', (req: Request, res: Response) => {
+  const filter = {
+    level: req.query.level as any,
+    event: req.query.event as string,
+    limit: req.query.limit ? parseInt(req.query.limit as string) : 100
+  };
+  
+  const logs = routingEngineLogger.queryLogs(filter);
+  res.json({
+    total: logs.length,
+    logs
+  });
+});
+
+// Log statistics
+app.get('/api/logs/stats', (req: Request, res: Response) => {
+  res.json(routingEngineLogger.getStatistics());
 });
 
 app.get('/api/routing/optimal-node', asyncHandler(async (req: Request, res: Response) => {
