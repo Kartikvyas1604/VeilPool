@@ -183,7 +183,7 @@ export default function PurchasePage() {
     }
   };
 
-  const getPriceInToken = (tier: typeof PRIVACY_PASS_TIERS[0]): string => {
+  const getPriceInToken = (tier: PricingTier): string => {
     if (selectedToken === 'SOL') return tier.price.toString();
     // Convert SOL price to stablecoin (1 SOL ≈ $100 approximation for UI)
     return (tier.price * 100).toFixed(2);

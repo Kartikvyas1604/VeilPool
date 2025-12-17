@@ -85,11 +85,6 @@ export default function SponsorPools() {
       setLoading(false);
     }
   };
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const addBeneficiary = async () => {
     if (!publicKey || !signTransaction || !selectedPool) return;

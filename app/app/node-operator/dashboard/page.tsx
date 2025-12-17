@@ -92,14 +92,6 @@ export default function NodeOperatorDashboard() {
       setLoading(false);
     }
   }, [publicKey, connection]);
-        );
-      }
-    } catch (error) {
-      console.error('Error fetching node data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [publicKey, connection]);
 
   useEffect(() => {
     if (publicKey) {

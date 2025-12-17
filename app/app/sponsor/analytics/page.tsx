@@ -146,31 +146,6 @@ export default function SponsorAnalytics() {
       setLoading(false);
     }
   }, [publicKey, connection]);
-          ],
-          geographicDistribution: [
-            { country: 'India', users: 45, usage: 10500000000 },
-            { country: 'United States', users: 35, usage: 8750000000 },
-            { country: 'Brazil', users: 25, usage: 7000000000 },
-            { country: 'Nigeria', users: 20, usage: 5250000000 },
-            { country: 'Others', users: 25, usage: 3500000000 },
-          ],
-        },
-      ];
-
-      setPools(demoData);
-      setSelectedPool(demoData[0]);
-      setNetworkImpact({
-        totalGBServed: 47.0,
-        totalBeneficiaries: 175,
-        totalSponsored: 150,
-        costEfficiency: 0.313,
-        averageSessionDuration: 45.3,
-        uptimePercentage: 99.7,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [publicKey, connection, PRIVACY_POOL_PROGRAM_ID, selectedPool]);
 
   useEffect(() => {
     if (publicKey) {
