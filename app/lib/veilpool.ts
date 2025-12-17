@@ -25,11 +25,12 @@ export async function getUserPrivacyPass(userPubkey: PublicKey): Promise<{
   remainingGb: number;
   expiresAt: number;
   isActive: boolean;
+  totalSpent: number;
+  passType: string;
 } | null> {
   try {
     const conn = getConnection();
     
-    // Find PDA for user's pass account
     const [passAccount] = PublicKey.findProgramAddressSync(
       [Buffer.from('user_pass'), userPubkey.toBuffer()],
       PROGRAM_IDS.PRIVACY_PASS
@@ -42,19 +43,43 @@ export async function getUserPrivacyPass(userPubkey: PublicKey): Promise<{
       return null;
     }
 
-    // Parse account data (adjust based on your actual account structure)
     const data = accountInfo.data;
     
-    // Example parsing (adjust offsets based on your Anchor account layout)
-    // Discriminator at bytes 0-8
-    const remainingGb = Number(data.readBigUInt64LE(8));
-    const expiresAt = Number(data.readBigInt64LE(16));
-    const isActive = data.readUInt8(24) === 1;
+    let offset = 8;
+    const user = new PublicKey(data.slice(offset, offset + 32));
+    offset += 32;
+    
+    const remainingGb = Number(data.readBigUInt64LE(offset));
+    offset += 8;
+    
+    const expiryTimestamp = Number(data.readBigInt64LE(offset));
+    offset += 8;
+    
+    const poolId = data.readUInt8(offset);
+    offset += 1;
+    
+    const hasPoolId = poolId === 1;
+    if (hasPoolId) {
+      offset += 8;
+    }
+    
+    const purchasedAt = Number(data.readBigInt64LE(offset));
+    offset += 8;
+    
+    const totalSpent = Number(data.readBigUInt64LE(offset));
+    offset += 8;
+    
+    const passType = data.readUInt8(offset);
+    offset += 1;
+    
+    const isActive = data.readUInt8(offset) === 1;
 
     return {
-      remainingGb: remainingGb / (1024 * 1024 * 1024), // Convert bytes to GB
-      expiresAt,
+      remainingGb: remainingGb / (1024 * 1024 * 1024),
+      expiresAt: expiryTimestamp,
       isActive,
+      totalSpent: totalSpent / 1e6,
+      passType: passType === 0 ? 'Pay-Per-GB' : passType === 1 ? 'Subscription' : 'Pool-Sponsored',
     };
   } catch (error) {
     console.error('Error fetching privacy pass:', error);
@@ -79,11 +104,10 @@ export async function getAllNodes(): Promise<NodeInfo[]> {
   try {
     const conn = getConnection();
     
-    // Fetch all node accounts from the program
     const accounts = await conn.getProgramAccounts(PROGRAM_IDS.NODE_REGISTRY, {
       filters: [
         {
-          dataSize: 256, // Adjust to your NodeAccount size
+          dataSize: 8 + 32 + 8 + 1 + (4 + 64) + (4 + 45) + 2 + 8 + 1 + 8 + 8 + 1 + 8 + 8 + 2,
         },
       ],
     });
@@ -91,18 +115,53 @@ export async function getAllNodes(): Promise<NodeInfo[]> {
     const nodes = accounts.map((account) => {
       const data = account.account.data;
       
-      // Parse node data (adjust based on your actual layout)
       try {
+        let offset = 8;
+        const operator = new PublicKey(data.slice(offset, offset + 32));
+        offset += 32;
+        
+        const stakeAmount = Number(data.readBigUInt64LE(offset));
+        offset += 8;
+        
+        const reputation = data.readUInt8(offset);
+        offset += 1;
+        
+        const locationLength = data.readUInt32LE(offset);
+        offset += 4;
+        const location = data.slice(offset, offset + locationLength).toString('utf-8');
+        offset += 64;
+        
+        const ipLength = data.readUInt32LE(offset);
+        offset += 4;
+        offset += 45;
+        
+        const bandwidthGbps = data.readUInt16LE(offset);
+        offset += 2;
+        
+        const totalBandwidthServed = Number(data.readBigUInt64LE(offset));
+        offset += 8;
+        
+        const uptimePercentage = data.readUInt8(offset);
+        offset += 1;
+        
+        const lastHeartbeat = Number(data.readBigInt64LE(offset));
+        offset += 8;
+        
+        const earningsAccumulated = Number(data.readBigUInt64LE(offset));
+        offset += 8;
+        
+        const isActive = data.readUInt8(offset) === 1;
+
         return {
           pubkey: account.pubkey.toBase58(),
-          operator: new PublicKey(data.slice(8, 40)).toBase58(),
-          stakeAmount: Number(data.readBigUInt64LE(40)),
-          reputation: data.readUInt8(48),
-          location: data.slice(49, 113).toString('utf-8').replace(/\0/g, ''),
-          bandwidthServed: Number(data.readBigUInt64LE(113)),
-          uptime: data.readUInt8(121),
-          lastHeartbeat: Number(data.readBigInt64LE(122)),
-          isActive: data.readUInt8(130) === 1,
+          operator: operator.toBase58(),
+          stakeAmount: stakeAmount / 1e9,
+          reputation,
+          location: location || 'Unknown',
+          bandwidthServed: totalBandwidthServed,
+          uptime: uptimePercentage,
+          lastHeartbeat,
+          isActive,
         };
       } catch (e) {
         console.error('Error parsing node:', e);
