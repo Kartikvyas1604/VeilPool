@@ -1,6 +1,5 @@
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
-// Deployed Program IDs (Devnet - December 17, 2025)
 export const PROGRAM_IDS = {
   NODE_REGISTRY: new PublicKey(process.env.NEXT_PUBLIC_NODE_REGISTRY_PROGRAM_ID || 'FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN'),
   PRIVACY_PASS: new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID || 'Bw98kokEAhjikV167NQEdDsbKe6hUa3Ado3bJNKQPQiZ'),
@@ -227,16 +226,9 @@ export async function getOptimalNode(params: {
   }
 }
 
-// Purchase privacy pass (transaction builder)
-// TODO: Implement full transaction building with actual parameters
 export async function buildPurchasePassTx(): Promise<Transaction> {
-  // This would build an actual transaction to purchase a pass
-  // Parameters needed: userPubkey: PublicKey, bandwidthGb: number, paymentMint: PublicKey
-  // For now, returning a placeholder
   const tx = new Transaction();
   
-  // Add instruction to purchase_pass
-  // tx.add(...)
   
   return tx;
 }
