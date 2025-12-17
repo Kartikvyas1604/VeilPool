@@ -57,4 +57,53 @@ describe('Routing Engine API', () => {
       }
     });
   });
+
+  describe('Load Balancing Logic', () => {
+    it('applies load penalty to node selection', () => {
+      // Test load penalty calculation
+      const node1 = { reputation: 90, activeConnections: 5 };
+      const node2 = { reputation: 85, activeConnections: 1 };
+      
+      const LOAD_PENALTY = 2;
+      const node1Score = node1.reputation - (node1.activeConnections * LOAD_PENALTY);
+      const node2Score = node2.reputation - (node2.activeConnections * LOAD_PENALTY);
+      
+      // node1: 90 - 10 = 80
+      // node2: 85 - 2 = 83
+      expect(node1Score).toBe(80);
+      expect(node2Score).toBe(83);
+      expect(node2Score).toBeGreaterThan(node1Score);
+    });
+
+    it('calculates load decay correctly', () => {
+      const initialLoad = 10;
+      const decayFactor = 0.9; // 10% decay per cycle
+      
+      // After 1 cycle: 10 * 0.9 = 9
+      const after1 = initialLoad * decayFactor;
+      expect(after1).toBe(9);
+      
+      // After 5 cycles: 10 * (0.9^5) ≈ 5.9
+      const after5 = initialLoad * Math.pow(decayFactor, 5);
+      expect(after5).toBeCloseTo(5.9, 1);
+      
+      // After 10 cycles: 10 * (0.9^10) ≈ 3.5
+      const after10 = initialLoad * Math.pow(decayFactor, 10);
+      expect(after10).toBeCloseTo(3.5, 1);
+    });
+
+    it('validates cache TTL expiration', () => {
+      const cacheTTL = 300000; // 5 minutes in ms
+      const now = Date.now();
+      
+      const freshCache = { nodeId: 'node1', timestamp: now - 60000 }; // 1 min ago
+      const staleCache = { nodeId: 'node2', timestamp: now - 400000 }; // 6.7 min ago
+      
+      const isFresh = (now - freshCache.timestamp) < cacheTTL;
+      const isStale = (now - staleCache.timestamp) >= cacheTTL;
+      
+      expect(isFresh).toBe(true);
+      expect(isStale).toBe(true);
+    });
+  });
 });

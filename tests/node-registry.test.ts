@@ -67,20 +67,25 @@ describe('Node Registry Program', () => {
     expect(nodeData.bandwidthGbps).toBe(bandwidthGbps);
   });
 
-  it('Updates node heartbeat', async () => {
+  it('Updates node heartbeat with performance metrics', async () => {
     if (!provider || !program) {
       console.warn('Skipping test: Solana not available');
       return;
     }
     const bandwidthServedGb = new BN(100);
+    const latencyMs = 50; // Good latency
+    const packetLossPct = 1; // Low packet loss
 
     const [globalRegistry] = PublicKey.findProgramAddressSync(
       [Buffer.from('registry')],
       program.programId
     );
 
+    const nodeDataBefore = await program.account.nodeAccount.fetch(nodeAccount);
+    const reputationBefore = nodeDataBefore.reputation;
+
     const tx = await program.methods
-      .updateHeartbeat(bandwidthServedGb)
+      .updateHeartbeat(bandwidthServedGb, latencyMs, packetLossPct)
       .accountsPartial({
         nodeAccount: nodeAccount,
         globalRegistry: globalRegistry,
@@ -93,6 +98,43 @@ describe('Node Registry Program', () => {
 
     const nodeData = await program.account.nodeAccount.fetch(nodeAccount);
     expect(nodeData.totalBandwidthServed.toNumber()).toBeGreaterThan(0);
+    expect(nodeData.lastHeartbeat.toNumber()).toBeGreaterThan(0);
+    // Reputation should improve with good metrics (latency < 100ms)
+    expect(nodeData.reputation).toBeGreaterThanOrEqual(reputationBefore);
+  });
+
+  it('Penalizes reputation for poor performance metrics', async () => {
+    if (!provider || !program) {
+      console.warn('Skipping test: Solana not available');
+      return;
+    }
+    const bandwidthServedGb = new BN(50);
+    const latencyMs = 350; // Poor latency (>300ms)
+    const packetLossPct = 8; // High packet loss (>5%)
+
+    const [globalRegistry] = PublicKey.findProgramAddressSync(
+      [Buffer.from('registry')],
+      program.programId
+    );
+
+    const nodeDataBefore = await program.account.nodeAccount.fetch(nodeAccount);
+    const reputationBefore = nodeDataBefore.reputation;
+
+    const tx = await program.methods
+      .updateHeartbeat(bandwidthServedGb, latencyMs, packetLossPct)
+      .accountsPartial({
+        nodeAccount: nodeAccount,
+        globalRegistry: globalRegistry,
+        operator: nodeOperator.publicKey,
+      })
+      .signers([nodeOperator])
+      .rpc();
+
+    console.log('Update heartbeat with poor metrics tx:', tx);
+
+    const nodeData = await program.account.nodeAccount.fetch(nodeAccount);
+    // Reputation should decrease with poor metrics
+    expect(nodeData.reputation).toBeLessThan(reputationBefore);
   });
 
   it('Deactivates a node', async () => {
