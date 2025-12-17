@@ -156,7 +156,7 @@ describe('Privacy Pool Program', () => {
     const tx = await program.methods
       .redeemAccess(amountGb)
       .accountsPartial({
-        pool: poolAccount,
+        poolAccount: poolAccount,
         beneficiaryAccess: beneficiaryAccess,
         beneficiary: beneficiary.publicKey,
       })
@@ -169,8 +169,8 @@ describe('Privacy Pool Program', () => {
     const poolData = await program.account.privacyPool.fetch(poolAccount);
 
     // Check consumption increased
-    expect(accessDataAfter.consumedGb.toNumber()).toBe(
-      accessDataBefore.consumedGb.toNumber() + amountGb.toNumber()
+    expect(accessDataAfter.usedGb.toNumber()).toBe(
+      accessDataBefore.usedGb.toNumber() + amountGb.toNumber()
     );
     expect(accessDataAfter.dailyUsageGb).toBe(
       accessDataBefore.dailyUsageGb + amountGb.toNumber()
@@ -241,8 +241,8 @@ describe('Privacy Pool Program', () => {
     
     // Verify daily usage tracking fields exist
     expect(accessData.dailyUsageGb).toBeDefined();
-    expect(accessData.lastResetTime).toBeDefined();
     expect(accessData.dailyLimitGb).toBeDefined();
+    // lastResetTime is calculated, not stored
     
     console.log('Daily usage tracking validated');
   });
@@ -266,10 +266,10 @@ describe('Privacy Pool Program', () => {
     
     // Verify session counter incremented from previous redemptions
     expect(accessData.totalSessions).toBeGreaterThan(0);
-    expect(accessData.consumedGb.toNumber()).toBeGreaterThan(0);
+    expect(accessData.usedGb.toNumber()).toBeGreaterThan(0);
     
     console.log(`Total sessions: ${accessData.totalSessions}`);
-    console.log(`Total consumed: ${accessData.consumedGb.toNumber()}GB`);
+    console.log(`Total used: ${accessData.usedGb.toNumber()}GB`);
     console.log(`Daily usage: ${accessData.dailyUsageGb}GB`);
   });
 });

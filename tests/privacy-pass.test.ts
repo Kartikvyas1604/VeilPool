@@ -230,30 +230,3 @@ describe('Privacy Pass Program - Dynamic Pricing', () => {
     console.log(`Price update timestamp: ${new Date(timestampAfter * 1000).toISOString()}`);
   });
 });
-          authority: provider.wallet.publicKey,
-        })
-        .rpc();
-
-      console.log('Initialize pass system tx:', tx);
-
-      const configData = await program.account.pricingConfig.fetch(pricingConfig);
-      expect(configData.authority.toString()).toBe(provider.wallet.publicKey.toString());
-    } catch (error) {
-      console.log('Initialize pass system test skipped (account may already exist)');
-    }
-  });
-
-  it('Test pass account PDA derivation', () => {
-    if (!provider || !program) {
-      console.warn('Skipping test: Solana not available');
-      return;
-    }
-    [passAccount] = PublicKey.findProgramAddressSync(
-      [Buffer.from('pass'), user.publicKey.toBuffer()],
-      program.programId
-    );
-
-    expect(passAccount).toBeDefined();
-    expect(passAccount).toBeInstanceOf(PublicKey);
-  });
-});
