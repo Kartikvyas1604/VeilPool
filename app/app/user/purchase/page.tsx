@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { createMintPassInstruction, createTokenTransferInstruction } from '@/lib/anchor-programs';
 
 interface PricingTier {
   id: string;
@@ -115,7 +116,7 @@ export default function PurchasePage() {
     setProcessing(true);
 
     try {
-      const priceInToken = selectedToken === 'SOL' ? tier.price : tier.price * 100; // Simplified conversion
+      const priceInToken = selectedToken === 'SOL' ? tier.price : tier.price * 100;
 
       // Check balance
       if (tokenBalances[selectedToken] < priceInToken) {
@@ -124,46 +125,48 @@ export default function PurchasePage() {
         return;
       }
 
-      // Derive PDA for user's pass account
-      const [passAccount] = PublicKey.findProgramAddressSync(
-        [Buffer.from('pass'), publicKey.toBuffer(), Buffer.from(tier.id)],
-        PRIVACY_PASS_PROGRAM_ID
+      const transaction = new Transaction();
+      const bandwidthGb = parseInt(tier.bandwidth.replace(' GB', '').replace('Unlimited', '999999'));
+      const durationDays = parseInt(tier.duration.replace(' days', '').replace('365', '365'));
+
+      // Create mint pass instruction
+      const { instruction: mintInstruction, treasury } = await createMintPassInstruction(
+        publicKey,
+        tier.id,
+        bandwidthGb,
+        durationDays,
+        connection
       );
 
-      const transaction = new Transaction();
-
       if (selectedToken === 'SOL') {
-        // SOL payment
-        const instruction = SystemProgram.transfer({
+        // SOL payment to treasury
+        const paymentInstruction = SystemProgram.transfer({
           fromPubkey: publicKey,
-          toPubkey: new PublicKey('VeiLPooL1111111111111111111111111111111111'), // Treasury
-          lamports: priceInToken * web3.LAMPORTS_PER_SOL,
+          toPubkey: treasury,
+          lamports: Math.floor(priceInToken * web3.LAMPORTS_PER_SOL),
         });
-        transaction.add(instruction);
+        transaction.add(paymentInstruction);
       } else {
         // SPL Token payment
         const mint = selectedToken === 'USDC' ? USDC_MINT : USDT_MINT;
-        const userTokenAccount = await getAssociatedTokenAddress(mint, publicKey);
-        await getAssociatedTokenAddress(
+        const decimals = 6; // USDC and USDT both use 6 decimals
+        
+        const tokenInstructions = await createTokenTransferInstruction(
+          publicKey,
+          treasury,
           mint,
-          new PublicKey('VeiLPooL1111111111111111111111111111111111')
+          priceInToken,
+          decimals,
+          connection
         );
-
-        // Check if user has token account
-        const accountInfo = await connection.getAccountInfo(userTokenAccount);
-        if (!accountInfo) {
-          alert(`You don't have a ${selectedToken} account. Please set one up first.`);
-          setProcessing(false);
-          return;
-        }
-
-        // Add SPL transfer instruction (simplified - would use actual SPL transfer in production)
-        console.log('Transferring', priceInToken, selectedToken, 'from', userTokenAccount.toBase58());
+        
+        tokenInstructions.forEach(ix => transaction.add(ix));
       }
 
-      // In production, add instruction to mint privacy pass
-      console.log('Minting privacy pass:', tier.id, 'to', passAccount.toBase58());
+      // Add mint pass instruction
+      transaction.add(mintInstruction);
 
+      // Send and confirm transaction
       const signature = await sendTransaction(transaction, connection);
       await connection.confirmTransaction(signature, 'confirmed');
 
@@ -171,16 +174,16 @@ export default function PurchasePage() {
       
       // Redirect to history
       window.location.href = '/user/history';
-    } catch (error) {
+    } catch (error: any) {
       console.error('Purchase error:', error);
-      alert('Transaction failed. Please try again.');
+      alert(`Transaction failed: ${error?.message || 'Unknown error'}. Please try again.`);
     } finally {
       setProcessing(false);
       setSelectedTier(null);
     }
   };
 
-  const getPriceInToken = (tier: PricingTier) => {
+  constConvert SOL price to stablecoin (1 SOL ≈ $100 approximation for UI
     if (selectedToken === 'SOL') return tier.price;
     // Simplified conversion (would use real oracle prices in production)
     return (tier.price * 100).toFixed(2);
