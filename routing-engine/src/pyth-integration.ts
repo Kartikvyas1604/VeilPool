@@ -117,8 +117,8 @@ export class PythIntegration {
       const usdcFeed = new PublicKey(this.PRICE_FEEDS.USDC_USD);
 
       const [solData, usdcData] = await Promise.all([
-        this.pythClient.getAssetPriceFromAccounts([solFeed]),
-        this.pythClient.getAssetPriceFromAccounts([usdcFeed]),
+        this.pythClient.getAssetPricesFromAccounts([solFeed]),
+        this.pythClient.getAssetPricesFromAccounts([usdcFeed]),
       ]);
 
       if (solData && solData.length > 0) {
@@ -166,8 +166,10 @@ export class PythIntegration {
       if (response.data && response.data.results) {
         this.updateThreatLevelsFromOONI(response.data.results);
       }
-    } catch (error) {
-      logger.warn('Failed to fetch OONI data, using cached threat intelligence', { error: error.message });
+    } catch (error: unknown) {
+      logger.warn('Failed to fetch OONI data, using cached threat intelligence', { 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 

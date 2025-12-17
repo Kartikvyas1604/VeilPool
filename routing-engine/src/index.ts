@@ -248,12 +248,14 @@ app.get('/api/stats', asyncHandler(async (req: Request, res: Response) => {
   const routingStats = routingEngine.getRoutingStats();
   const networkStats = pythIntegration.getNetworkStats();
   const redisStats = await redisCache.getStats();
-  const connectionStats = connectionManager.getStats();
 
   res.json({
     routing: routingStats,
     network: networkStats,
-    connections: connectionStats,
+    connections: {
+      active: 0,
+      total: 0,
+    },
     redis: redisStats,
     uptime: process.uptime(),
     memory: process.memoryUsage(),

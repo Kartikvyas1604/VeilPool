@@ -5,10 +5,36 @@ import { PythIntegration } from './pyth-integration';
 export class RoutingEngine {
   private nodeMonitor: NodeMonitor;
   private pythIntegration: PythIntegration;
+  private nodeLoadMap: Map<string, number> = new Map();
+  private routingCache: Map<string, {decision: RoutingDecision, timestamp: number}> = new Map();
+  private readonly CACHE_TTL = 300000;
 
   constructor(nodeMonitor: NodeMonitor, pythIntegration: PythIntegration) {
     this.nodeMonitor = nodeMonitor;
     this.pythIntegration = pythIntegration;
+    
+    setInterval(() => this.decayNodeLoad(), 10000);
+    setInterval(() => this.cleanCache(), 60000);
+  }
+
+  private decayNodeLoad(): void {
+    for (const [nodeId, load] of this.nodeLoadMap.entries()) {
+      const newLoad = Math.max(0, load - 1);
+      if (newLoad === 0) {
+        this.nodeLoadMap.delete(nodeId);
+      } else {
+        this.nodeLoadMap.set(nodeId, newLoad);
+      }
+    }
+  }
+
+  private cleanCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.routingCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.routingCache.delete(key);
+      }
+    }
   }
 
   async selectOptimalNode(request: UserRoutingRequest): Promise<RoutingDecision> {
