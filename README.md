@@ -126,25 +126,32 @@ npx @veilpool/cli create-pool \
 
 ### Anchor Programs
 
-1. **Node Registry** (`4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo`)
+1. **Node Registry** (`FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN`)
    - Node registration and staking (100 SOL minimum)
-   - Reputation scoring (0-100)
+   - **NEW:** Advanced heartbeat monitoring (latency, packet loss)
+   - **NEW:** Dynamic reputation scoring based on performance metrics
+   - **NEW:** Automatic uptime calculation with downtime penalties
    - Earnings distribution (80% operator, 20% protocol)
    - Slashing for downtime/malicious behavior
 
-2. **Privacy Pool** (`H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e`)
+2. **Privacy Pool** (`BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA`)
    - Sponsored pool creation
    - Beneficiary whitelisting
+   - **NEW:** Daily bandwidth limits per beneficiary (1/30th allocation)
+   - **NEW:** Automatic daily usage reset after 24 hours
+   - **NEW:** Session counter for analytics and monitoring
    - Usage tracking and allocation
    - Auto-refill triggers
 
-3. **Privacy Pass** (`786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH`)
+3. **Privacy Pass** (`Bw98kokEAhjikV167NQEdDsbKe6hUa3Ado3bJNKQPQiZ`)
    - Pay-per-GB purchases ($0.50/GB USDC)
+   - **NEW:** Dynamic demand-based pricing (50%-200% range)
+   - **NEW:** Real-time demand factor updates (10000 = 100% baseline)
    - Subscription models (Monthly/Quarterly/Yearly)
    - Tiered pricing with bulk discounts
    - Expiration management
 
-4. **VRF Selection** (`4SD36sZLcudbMwUqpd9Efp2iBrN5ihMWj8d59aFAoQFT`)
+4. **VRF Selection** (`35aknS1cM883peeW1JFZNhC2ooQAAv2D8wEjUisi2wui`)
    - Cryptographically random node selection
    - Reputation-weighted probability
    - Anti-gaming mechanisms
