@@ -23,7 +23,7 @@ export default function CreatePool() {
   const [refillThreshold, setRefillThreshold] = useState('20');
   const [creating, setCreating] = useState(false);
 
-  const PRIVACY_POOL_PROGRAM_ID = new PublicKey('H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e');
+  const PRIVACY_POOL_PROGRAM_ID = new PublicKey('BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA');
 
   const handleCreate = async () => {
     if (!publicKey || !signTransaction || !sendTransaction) {

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("786JcBvwFVwZNJfatLkUzuByuvqzMKQgD3Aw8NrPChhH");
+declare_id!("Bw98kokEAhjikV167NQEdDsbKe6hUa3Ado3bJNKQPQiZ");
 
 const BASE_PRICE_PER_GB_USDC: u64 = 500_000;
 const DEFAULT_EXPIRY_DAYS: i64 = 30;

@@ -76,7 +76,7 @@ export default function ExplorerPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
 
-  const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
+  const NODE_REGISTRY_PROGRAM_ID = new PublicKey('FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN');
 
   const fetchNetworkData = useCallback(async () => {
     setLoading(true);

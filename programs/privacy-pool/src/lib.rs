@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e");
+declare_id!("BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA");
 
 const MAX_BENEFICIARIES: usize = 1000;
 const MIN_ALLOCATION_GB: u64 = 1;

@@ -23,7 +23,7 @@ interface NodeData {
   registeredAt: number;
 }
 
-const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
+const NODE_REGISTRY_PROGRAM_ID = new PublicKey('FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN');
 
 export default function NodeOperatorDashboard() {
   const { publicKey } = useWallet();

@@ -31,7 +31,7 @@ export default function SponsorPools() {
   const [newBeneficiary, setNewBeneficiary] = useState('');
   const [allocationGB, setAllocationGB] = useState(10);
 
-  const PRIVACY_POOL_PROGRAM_ID = new PublicKey('H18E4aE9pJXteWcEZxcxwvC6ueFhTToCT9Qr5ynpmu1e');
+  const PRIVACY_POOL_PROGRAM_ID = new PublicKey('BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA');
 
   useEffect(() => {
     if (publicKey) {

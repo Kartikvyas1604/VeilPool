@@ -1,11 +1,11 @@
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 
-// Deployed Program IDs (Devnet - December 7, 2025)
+// Deployed Program IDs (Devnet - December 17, 2025)
 export const PROGRAM_IDS = {
-  NODE_REGISTRY: new PublicKey(process.env.NEXT_PUBLIC_NODE_REGISTRY_PROGRAM_ID || '8cCj4agFvZW1dakN6fyaeh4G84BE686of15ZQboNVEt'),
-  PRIVACY_PASS: new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID || 'ErJqEhZKQZbLt1Q5VJGhdxXCzpFr7UWMn95JTwUDMAQL'),
-  PRIVACY_POOL: new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_POOL_PROGRAM_ID || '8hFfsQWLNxAo9HjyZWL22sSTy8hCHCjEKHAfJrU8UPHm'),
-  VRF_SELECTION: new PublicKey(process.env.NEXT_PUBLIC_VRF_SELECTION_PROGRAM_ID || 'Hy93mnAuUGc7PxGqAidBMUqVF2gzxHa7iBQ3EVGwpoyK'),
+  NODE_REGISTRY: new PublicKey(process.env.NEXT_PUBLIC_NODE_REGISTRY_PROGRAM_ID || 'FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN'),
+  PRIVACY_PASS: new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_PASS_PROGRAM_ID || 'Bw98kokEAhjikV167NQEdDsbKe6hUa3Ado3bJNKQPQiZ'),
+  PRIVACY_POOL: new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_POOL_PROGRAM_ID || 'BEBqJeWCWgD3hST6YoxMCnHLFx1nxie235aeMRuC51iA'),
+  VRF_SELECTION: new PublicKey(process.env.NEXT_PUBLIC_VRF_SELECTION_PROGRAM_ID || '35aknS1cM883peeW1JFZNhC2ooQAAv2D8wEjUisi2wui'),
 };
 
 export const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';

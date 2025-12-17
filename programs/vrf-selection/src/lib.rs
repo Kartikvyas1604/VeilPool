@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::sysvar;
 
-declare_id!("4SD36sZLcudbMwUqpd9Efp2iBrN5ihMWj8d59aFAoQFT");
+declare_id!("35aknS1cM883peeW1JFZNhC2ooQAAv2D8wEjUisi2wui");
 
 #[program]
 pub mod vrf_node_selection {

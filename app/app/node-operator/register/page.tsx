@@ -22,7 +22,7 @@ export default function RegisterNode() {
   const [registering, setRegistering] = useState(false);
   const [detectingIP, setDetectingIP] = useState(false);
 
-  const NODE_REGISTRY_PROGRAM_ID = new PublicKey('4STuqLYGcLs9Py4TfyBct1dn8pSgMiFsPygifp47bpXo');
+  const NODE_REGISTRY_PROGRAM_ID = new PublicKey('FepL8NfccdbfKfGNwCYGX68gLuNxw3SFc4ygvFMyE9tN');
   const MIN_STAKE = 100;
 
   const detectIPAddress = async () => {
