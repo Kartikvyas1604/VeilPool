@@ -19,6 +19,7 @@ pub mod privacy_pass {
         price_oracle: Pubkey,
     ) -> Result<()> {
         let config = &mut ctx.accounts.pricing_config;
+        let clock = Clock::get()?;
         
         config.authority = ctx.accounts.authority.key();
         config.base_price_per_gb = BASE_PRICE_PER_GB_USDC;
@@ -32,11 +33,14 @@ pub mod privacy_pass {
         config.tier_2_threshold = TIER_2_THRESHOLD_GB;
         config.tier_2_discount = TIER_2_DISCOUNT_BPS;
         config.is_active = true;
+        config.dynamic_pricing_enabled = false;
+        config.current_demand_factor = 10000;
+        config.last_price_update = clock.unix_timestamp;
 
         emit!(PassSystemInitialized {
             authority: config.authority,
             base_price: config.base_price_per_gb,
-            timestamp: Clock::get()?.unix_timestamp,
+            timestamp: clock.unix_timestamp,
         });
 
         Ok(())
@@ -341,10 +345,45 @@ pub mod privacy_pass {
 
         Ok(())
     }
+
+    pub fn update_demand_pricing(
+        ctx: Context<UpdatePricing>,
+        demand_factor: u16,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.pricing_config;
+        let clock = Clock::get()?;
+        
+        require!(demand_factor >= 5000 && demand_factor <= 20000, ErrorCode::InvalidDemandFactor);
+        
+        config.current_demand_factor = demand_factor;
+        config.last_price_update = clock.unix_timestamp;
+
+        emit!(DemandPricingUpdated {
+            demand_factor,
+            timestamp: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
+
+    pub fn toggle_dynamic_pricing(
+        ctx: Context<UpdatePricing>,
+        enabled: bool,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.pricing_config;
+        config.dynamic_pricing_enabled = enabled;
+
+        emit!(DynamicPricingToggled {
+            enabled,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+
+        Ok(())
+    }
 }
 
 fn calculate_price(bandwidth_gb: u64, config: &PricingConfig) -> Result<u64> {
-    let base_price = bandwidth_gb.checked_mul(config.base_price_per_gb).unwrap();
+    let mut base_price = bandwidth_gb.checked_mul(config.base_price_per_gb).unwrap();
     
     let discount_bps = if bandwidth_gb >= config.tier_2_threshold {
         config.tier_2_discount
@@ -358,7 +397,24 @@ fn calculate_price(bandwidth_gb: u64, config: &PricingConfig) -> Result<u64> {
         .checked_mul(discount_bps as u64).unwrap()
         .checked_div(10000).unwrap();
     
-    Ok(base_price.checked_sub(discount).unwrap())
+    base_price = base_price.checked_sub(discount).unwrap();
+
+    if config.dynamic_pricing_enabled {
+        let demand_factor = config.current_demand_factor;
+        if demand_factor > 10000 {
+            let increase = base_price
+                .checked_mul(demand_factor.checked_sub(10000).unwrap() as u64).unwrap()
+                .checked_div(10000).unwrap();
+            base_price = base_price.checked_add(increase).unwrap();
+        } else if demand_factor < 10000 {
+            let decrease = base_price
+                .checked_mul((10000u16).checked_sub(demand_factor).unwrap() as u64).unwrap()
+                .checked_div(10000).unwrap();
+            base_price = base_price.checked_sub(decrease).unwrap();
+        }
+    }
+
+    Ok(base_price)
 }
 
 #[derive(Accounts)]
@@ -553,12 +609,15 @@ pub struct PricingConfig {
     pub tier_2_threshold: u64,
     pub tier_2_discount: u16,
     pub is_active: bool,
+    pub dynamic_pricing_enabled: bool,
+    pub current_demand_factor: u16,
+    pub last_price_update: i64,
 }
 
 impl PricingConfig {
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(arithmetic_overflow)]
-    pub const LEN: usize = 32 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 2 + 8 + 2 + 1;
+    pub const LEN: usize = 32 + 8 + 32 + 32 + 32 + 8 + 8 + 8 + 2 + 8 + 2 + 1 + 1 + 2 + 8;
 }
 
 #[account]
@@ -681,6 +740,18 @@ pub struct PricingUpdated {
     pub timestamp: i64,
 }
 
+#[event]
+pub struct DemandPricingUpdated {
+    pub demand_factor: u16,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct DynamicPricingToggled {
+    pub enabled: bool,
+    pub timestamp: i64,
+}
+
 #[error_code]
 pub enum ErrorCode {
     #[msg("Pass system is not currently active")]
@@ -699,4 +770,6 @@ pub enum ErrorCode {
     InvalidPrice,
     #[msg("Unauthorized: Signer is not the pass owner")]
     Unauthorized,
+    #[msg("Invalid demand factor. Must be between 5000 and 20000")]
+    InvalidDemandFactor,
 }
