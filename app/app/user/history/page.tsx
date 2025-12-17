@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
+import { parsePrivacyPassAccount } from '@/lib/anchor-programs';
 
 interface PrivacyPass {
   id: string;
@@ -65,79 +66,95 @@ export default function UserHistoryPage() {
         ],
       });
 
-      // Demo data if no passes found
       if (passAccounts.length === 0) {
-        setPasses([
-          {
-            id: 'standard-1',
-            name: 'Standard Pass',
-            bandwidth: '50 GB',
-            bandwidthUsed: 28.4,
-            bandwidthTotal: 50,
-            expiresAt: Date.now() + 15 * 24 * 60 * 60 * 1000,
-            purchasedAt: Date.now() - 15 * 24 * 60 * 60 * 1000,
-            status: 'active',
-            signature: '5xAbC...dEfG',
-            price: 2,
-            token: 'SOL',
-          },
-          {
-            id: 'basic-1',
-            name: 'Basic Pass',
-            bandwidth: '10 GB',
-            bandwidthUsed: 10,
-            bandwidthTotal: 10,
-            expiresAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
-            purchasedAt: Date.now() - 40 * 24 * 60 * 60 * 1000,
-            status: 'exhausted',
-            signature: '4yZxW...vUts',
-            price: 0.5,
-            token: 'SOL',
-          },
-        ]);
-
-        setTransactions([
-          {
-            signature: '5xAbCdEfGhIjKlMnOpQrStUvWxYz1234567890',
-            type: 'purchase',
-            amount: 2,
-            token: 'SOL',
-            timestamp: Date.now() - 15 * 24 * 60 * 60 * 1000,
-            status: 'confirmed',
-            passName: 'Standard Pass',
-          },
-          {
-            signature: '4yZxWvUtSrQpOnMlKjIhGfEdCbA0987654321',
-            type: 'purchase',
-            amount: 0.5,
-            token: 'SOL',
-            timestamp: Date.now() - 40 * 24 * 60 * 60 * 1000,
-            status: 'confirmed',
-            passName: 'Basic Pass',
-          },
-        ]);
-
-        setTotalSpent({ SOL: 2.5, USDC: 0, USDT: 0 });
+        setPasses([]);
+        setTransactions([]);
+        setTotalSpent({ SOL: 0, USDC: 0, USDT: 0 });
+        setLoading(false);
+        return;
       }
+
+      // Parse real on-chain privacy pass accounts
+      const parsedPasses: PrivacyPass[] = passAccounts.map((account) => {
+        const passData = parsePrivacyPassAccount(account.account.data);
+        const now = Date.now();
+        const expiresAt = passData.expiresAt * 1000;
+        const purchasedAt = passData.mintTimestamp * 1000;
+        const bandwidthUsedGB = passData.bandwidthUsed / (1024 * 1024 * 1024);
+        const bandwidthTotalGB = passData.bandwidthLimit / (1024 * 1024 * 1024);
+        const usagePercent = (bandwidthUsedGB / bandwidthTotalGB) * 100;
+        
+        let status: 'active' | 'expired' | 'exhausted';
+        if (usagePercent >= 100) {
+          status = 'exhausted';
+        } else if (now > expiresAt) {
+          status = 'expired';
+        } else {
+          status = 'active';
+        }
+
+        return {
+          id: account.pubkey.toBase58(),
+          name: `Privacy Pass ${passData.tier}`,
+          bandwidth: `${bandwidthTotalGB.toFixed(1)} GB`,
+          bandwidthUsed: usagePercent,
+          bandwidthTotal: bandwidthTotalGB,
+          expiresAt,
+          purchasedAt,
+          status,
+          signature: account.pubkey.toBase58().slice(0, 16),
+          price: passData.price / 1e9, // Convert lamports to SOL
+          token: passData.paymentToken.toBase58() === PublicKey.default.toBase58() ? 'SOL' : 'USDC',
+        };
+      });
+
+      setPasses(parsedPasses);
 
       // Fetch transaction signatures for the wallet
       const signatures = await connection.getSignaturesForAddress(publicKey, { limit: 20 });
       
-      // Parse transactions
-      const txHistory: Transaction[] = signatures.map((sig) => ({
-        signature: sig.signature,
-        type: 'purchase',
-        amount: Math.random() * 5,
-        token: 'SOL',
-        timestamp: (sig.blockTime || Date.now() / 1000) * 1000,
-        status: sig.err ? 'failed' : 'confirmed',
-      }));
+      // Parse real transactions - filter for privacy pass related only
+      const txHistory: Transaction[] = [];
+      for (const sig of signatures) {
+        const tx = await connection.getTransaction(sig.signature, {
+          maxSupportedTransactionVersion: 0,
+        });
+        
+        if (tx && tx.meta) {
+          // Check if transaction involves privacy pass program
+          const involvesPass = tx.transaction.message.staticAccountKeys.some(
+            (key) => key.equals(PRIVACY_PASS_PROGRAM_ID)
+          );
 
-      if (txHistory.length > 0) {
-        setTransactions((prev) => [...prev, ...txHistory].slice(0, 20));
+          if (involvesPass) {
+            txHistory.push({
+              signature: sig.signature,
+              type: 'purchase',
+              amount: Math.abs((tx.meta.preBalances[0] - tx.meta.postBalances[0]) / 1e9),
+              token: 'SOL',
+              timestamp: (sig.blockTime || Date.now() / 1000) * 1000,
+              status: sig.err ? 'failed' : 'confirmed',
+              passName: 'Privacy Pass',
+            });
+          }
+        }
       }
+
+      setTransactions(txHistory);
+
+      // Calculate total spent from parsed passes
+      const spent = { SOL: 0, USDC: 0, USDT: 0 };
+      parsedPasses.forEach((pass) => {
+        if (pass.token === 'SOL') spent.SOL += pass.price;
+        else if (pass.token === 'USDC') spent.USDC += pass.price;
+        else if (pass.token === 'USDT') spent.USDT += pass.price;
+      });
+      setTotalSpent(spent);
     } catch (error) {
       console.error('Error fetching user data:', error);
+      setPasses([]);
+      setTransactions([]);
+      setTotalSpent({ SOL: 0, USDC: 0, USDT: 0 });
     } finally {
       setLoading(false);
     }

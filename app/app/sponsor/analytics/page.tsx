@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { PublicKey } from '@solana/web3.js';
 import { web3 } from '@coral-xyz/anchor';
+import { parsePrivacyPoolAccount } from '@/lib/anchor-programs';
 
 interface PoolAnalytics {
   poolId: number;
@@ -60,49 +61,54 @@ export default function SponsorAnalytics() {
         ],
       });
 
-      // Calculate analytics from on-chain data
-      const analyticsData: PoolAnalytics[] = accounts.map((account, idx) => {
-        const data = account.account.data;
-        const totalFunded = Number(data.readBigUInt64LE(176));
-        const totalUsed = Number(data.readBigUInt64LE(184));
-        const beneficiaryCount = data.readUInt32LE(192);
-        const activeUsers = Math.floor(beneficiaryCount * 0.75); // Estimate from on-chain data
+      if (accounts.length === 0) {
+        setPools([]);
+        setSelectedPool(null);
+        setNetworkImpact({
+          totalGBServed: 0,
+          totalBeneficiaries: 0,
+          totalSponsored: 0,
+          costEfficiency: 0,
+          averageSessionDuration: 0,
+          uptimePercentage: 0,
+        });
+        setLoading(false);
+        return;
+      }
 
-        // Generate usage history
+      // Parse real on-chain pool data
+      const analyticsData: PoolAnalytics[] = accounts.map((account, idx) => {
+        const poolData = parsePrivacyPoolAccount(account.account.data);
+        const totalUsedBytes = poolData.totalUsed;
+        const totalUsedGB = totalUsedBytes / (1024 * 1024 * 1024);
+        const activeUsers = Math.floor(poolData.beneficiaryCount * 0.75);
+
+        // Generate usage history from recent activity
         const now = Date.now();
         const usageHistory = Array.from({ length: 30 }, (_, i) => {
           const date = new Date(now - (29 - i) * 24 * 60 * 60 * 1000);
+          // Would ideally fetch from usage events on-chain or off-chain indexer
           return {
             date: date.toISOString().split('T')[0],
-            usage: Math.floor(Math.random() * 50) + 10,
-            users: Math.floor(Math.random() * activeUsers) + 5,
+            usage: 0, // Real usage per day from event logs
+            users: 0, // Real active users per day from event logs
           };
         });
 
         return {
           poolId: idx + 1,
-          name: data.slice(48, 176).toString('utf8').replace(/\0/g, ''),
-          totalFunded,
-          totalUsed,
-          beneficiaryCount,
+          name: poolData.name,
+          totalFunded: poolData.totalFunded,
+          totalUsed: totalUsedBytes,
+          beneficiaryCount: poolData.beneficiaryCount,
           activeUsers,
-          avgUsagePerUser: activeUsers > 0 ? totalUsed / activeUsers : 0,
-          costPerGB: totalUsed > 0 ? totalFunded / (totalUsed / 1e9) : 0,
-          impactScore: Math.min(100, (activeUsers / beneficiaryCount) * 100),
-          createdAt: Number(data.readBigInt64LE(205)),
+          avgUsagePerUser: activeUsers > 0 ? totalUsedBytes / activeUsers : 0,
+          costPerGB: totalUsedGB > 0 ? poolData.totalFunded / totalUsedGB : 0,
+          impactScore: Math.min(100, poolData.beneficiaryCount > 0 ? (activeUsers / poolData.beneficiaryCount) * 100 : 0),
+          createdAt: poolData.createdAt * 1000,
           usageHistory,
-          topBeneficiaries: [
-            { address: '5xJ8v...xyz', usage: 45.2, lastActive: Date.now() - 2 * 60 * 60 * 1000 },
-            { address: '7kP9m...abc', usage: 38.7, lastActive: Date.now() - 5 * 60 * 60 * 1000 },
-            { address: '9qR4n...def', usage: 32.1, lastActive: Date.now() - 1 * 24 * 60 * 60 * 1000 },
-          ],
-          geographicDistribution: [
-            { country: 'United States', users: Math.floor(beneficiaryCount * 0.3), usage: totalUsed * 0.35 },
-            { country: 'United Kingdom', users: Math.floor(beneficiaryCount * 0.2), usage: totalUsed * 0.25 },
-            { country: 'Germany', users: Math.floor(beneficiaryCount * 0.15), usage: totalUsed * 0.15 },
-            { country: 'France', users: Math.floor(beneficiaryCount * 0.12), usage: totalUsed * 0.12 },
-            { country: 'Others', users: Math.floor(beneficiaryCount * 0.23), usage: totalUsed * 0.13 },
-          ],
+          topBeneficiaries: [], // Would query from usage events
+          geographicDistribution: [], // Would query from usage events with IP geolocation
         };
       });
 
@@ -112,7 +118,7 @@ export default function SponsorAnalytics() {
       }
 
       // Calculate network-wide impact
-      const totalGBServed = analyticsData.reduce((sum, p) => sum + p.totalUsed, 0) / 1e9;
+      const totalGBServed = analyticsData.reduce((sum, p) => sum + p.totalUsed, 0) / (1024 * 1024 * 1024);
       const totalBeneficiaries = analyticsData.reduce((sum, p) => sum + p.beneficiaryCount, 0);
       const totalSponsored = analyticsData.reduce((sum, p) => sum + p.totalFunded, 0);
 
@@ -121,63 +127,25 @@ export default function SponsorAnalytics() {
         totalBeneficiaries,
         totalSponsored,
         costEfficiency: totalSponsored > 0 ? totalGBServed / (totalSponsored / web3.LAMPORTS_PER_SOL) : 0,
-        averageSessionDuration: 45.3, // minutes - would calculate from actual usage data
-        uptimePercentage: 99.7,
+        averageSessionDuration: 0, // Would calculate from usage events
+        uptimePercentage: 0, // Would calculate from node heartbeats
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      
-      // Demo data for showcase
-      const demoData: PoolAnalytics[] = [
-        {
-          poolId: 1,
-          name: 'Journalist Privacy Fund',
-          totalFunded: 50000000000,
-          totalUsed: 12000000000,
-          beneficiaryCount: 25,
-          activeUsers: 19,
-          avgUsagePerUser: 631578947,
-          costPerGB: 4166666667,
-          impactScore: 76,
-          createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
-          usageHistory: Array.from({ length: 30 }, (_, i) => ({
-            date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            usage: 300 + Math.random() * 200,
-            users: 12 + Math.floor(Math.random() * 8),
-          })),
-          topBeneficiaries: [
-            { address: 'FRTz...k8Pu', usage: 2.4, lastActive: Date.now() - 1000 * 60 * 30 },
-            { address: '8Gvx...mN4q', usage: 2.1, lastActive: Date.now() - 1000 * 60 * 120 },
-            { address: 'DMw9...pR7L', usage: 1.8, lastActive: Date.now() - 1000 * 60 * 60 * 5 },
-          ],
-          geographicDistribution: [
-            { country: 'United States', users: 8, usage: 4200000000 },
-            { country: 'United Kingdom', users: 5, usage: 3000000000 },
-            { country: 'Syria', users: 4, usage: 2400000000 },
-            { country: 'Turkey', users: 3, usage: 1800000000 },
-            { country: 'Others', users: 5, usage: 600000000 },
-          ],
-        },
-        {
-          poolId: 2,
-          name: 'Student Access Program',
-          totalFunded: 100000000000,
-          totalUsed: 35000000000,
-          beneficiaryCount: 150,
-          activeUsers: 127,
-          avgUsagePerUser: 275590551,
-          costPerGB: 2857142857,
-          impactScore: 85,
-          createdAt: Date.now() - 15 * 24 * 60 * 60 * 1000,
-          usageHistory: Array.from({ length: 30 }, (_, i) => ({
-            date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            usage: 800 + Math.random() * 400,
-            users: 100 + Math.floor(Math.random() * 30),
-          })),
-          topBeneficiaries: [
-            { address: 'J9Kw...xT2v', usage: 0.8, lastActive: Date.now() - 1000 * 60 * 15 },
-            { address: 'P3Hc...wZ8m', usage: 0.7, lastActive: Date.now() - 1000 * 60 * 45 },
-            { address: 'V5Yr...nQ1k', usage: 0.6, lastActive: Date.now() - 1000 * 60 * 90 },
+      setPools([]);
+      setSelectedPool(null);
+      setNetworkImpact({
+        totalGBServed: 0,
+        totalBeneficiaries: 0,
+        totalSponsored: 0,
+        costEfficiency: 0,
+        averageSessionDuration: 0,
+        uptimePercentage: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [publicKey, connection]);
           ],
           geographicDistribution: [
             { country: 'India', users: 45, usage: 10500000000 },

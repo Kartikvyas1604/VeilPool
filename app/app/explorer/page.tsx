@@ -39,6 +39,29 @@ const WORLD_REGIONS = [
   { name: 'Oceania', nodes: 6, color: 'from-pink-500 to-pink-600' },
 ];
 
+// City coordinates mapping for visualization
+const CITY_COORDINATES: Record<string, [number, number]> = {
+  'San Francisco': [-122.4194, 37.7749],
+  'New York': [-74.0060, 40.7128],
+  'Toronto': [-79.3832, 43.6532],
+  'London': [-0.1276, 51.5074],
+  'Berlin': [13.4050, 52.5200],
+  'Paris': [2.3522, 48.8566],
+  'Amsterdam': [4.9041, 52.3676],
+  'Singapore': [103.8198, 1.3521],
+  'Tokyo': [139.6503, 35.6762],
+  'Seoul': [126.9780, 37.5665],
+  'Mumbai': [72.8777, 19.0760],
+  'São Paulo': [-46.6333, -23.5505],
+  'Buenos Aires': [-58.3816, -34.6037],
+  'Johannesburg': [28.0473, -26.2041],
+  'Sydney': [151.2093, -33.8688],
+};
+
+function getCoordinatesForCity(city: string): [number, number] | undefined {
+  return CITY_COORDINATES[city];
+}
+
 export default function ExplorerPage() {
   const { connection } = useConnection();
   const [nodes, setNodes] = useState<Node[]>([]);
