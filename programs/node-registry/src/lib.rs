@@ -169,14 +169,34 @@ pub mod node_registry {
         Ok(())
     }
 
-    pub fn update_heartbeat(ctx: Context<UpdateHeartbeat>, bandwidth_served_gb: u64) -> Result<()> {
+    pub fn update_heartbeat(ctx: Context<UpdateHeartbeat>, bandwidth_served_gb: u64, latency_ms: u16, packet_loss_pct: u8) -> Result<()> {
         let node = &mut ctx.accounts.node_account;
         let clock = Clock::get()?;
         
         require!(node.is_active, ErrorCode::NodeNotActive);
+        require!(packet_loss_pct <= 100, ErrorCode::InvalidMetric);
+
+        let time_since_last = clock.unix_timestamp.checked_sub(node.last_heartbeat).unwrap_or(0);
+        let expected_interval: i64 = 3600;
+        
+        if time_since_last > expected_interval.checked_mul(2).unwrap() {
+            let downtime_pct = (time_since_last.checked_mul(100).unwrap()).checked_div(expected_interval.checked_mul(24).unwrap()).unwrap();
+            let uptime_deduction = (downtime_pct as u8).min(20);
+            node.uptime_percentage = node.uptime_percentage.saturating_sub(uptime_deduction);
+        } else {
+            node.uptime_percentage = node.uptime_percentage.saturating_add(1).min(100);
+        }
 
         node.last_heartbeat = clock.unix_timestamp;
         node.total_bandwidth_served = node.total_bandwidth_served.checked_add(bandwidth_served_gb).unwrap();
+
+        let mut reputation_delta: i16 = 0;
+        if latency_ms < 100 { reputation_delta = reputation_delta.checked_add(1).unwrap(); }
+        if latency_ms > 300 { reputation_delta = reputation_delta.checked_sub(2).unwrap(); }
+        if packet_loss_pct > 5 { reputation_delta = reputation_delta.checked_sub(3).unwrap(); }
+        if node.uptime_percentage < 95 { reputation_delta = reputation_delta.checked_sub(2).unwrap(); }
+        
+        node.reputation = ((node.reputation as i16).checked_add(reputation_delta).unwrap()).clamp(0, 100) as u8;
 
         let registry = &mut ctx.accounts.global_registry;
         registry.total_bandwidth_served = registry.total_bandwidth_served.checked_add(bandwidth_served_gb).unwrap();
@@ -261,9 +281,10 @@ pub mod node_registry {
         Ok(())
     }
 
-    pub fn record_earnings(ctx: Context<RecordEarnings>, amount: u64) -> Result<()> {
+    pub fn record_earnings(ctx: Context<RecordEarnings>, amount: u64, bandwidth_gb: u64) -> Result<()> {
         let node = &mut ctx.accounts.node_account;
         require!(node.is_active, ErrorCode::NodeNotActive);
+        require!(amount > 0, ErrorCode::InvalidMetric);
 
         let protocol_fee = amount
             .checked_mul(PROTOCOL_FEE_BPS as u64).unwrap()
@@ -280,6 +301,7 @@ pub mod node_registry {
             operator: node.operator,
             amount: operator_earnings,
             protocol_fee,
+            bandwidth_gb,
             timestamp: Clock::get()?.unix_timestamp,
         });
 
@@ -341,6 +363,14 @@ pub mod node_registry {
 
         Ok(())
     }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct SettlementRecord {
+    pub node_operator: Pubkey,
+    pub amount: u64,
+    pub bandwidth_gb: u64,
+    pub proof_hash: [u8; 32],
 }
 
 #[derive(Accounts)]
@@ -716,6 +746,7 @@ pub struct EarningsRecorded {
     pub operator: Pubkey,
     pub amount: u64,
     pub protocol_fee: u64,
+    pub bandwidth_gb: u64,
     pub timestamp: i64,
 }
 
@@ -764,4 +795,6 @@ pub enum ErrorCode {
     LowReputation,
     #[msg("No earnings available to claim")]
     NoEarningsToClaim,
+    #[msg("Invalid metric value provided")]
+    InvalidMetric,
 }
